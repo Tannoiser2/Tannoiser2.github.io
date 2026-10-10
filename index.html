@@ -111,33 +111,9 @@ footer p{margin:0 0 6px;max-width:760px}
 </footer>
 
 <script>
-const BASE = "https://tannoiser2.github.io/";
-const GH = "https://github.com/Tannoiser2/";
-// online: true = multigiocatore online con stanze (Firebase)
-const GAMES = [
-  {repo:"FlammeRouge", img:"flammerouge", title:"Ultimo chilometro", orig:"da Flamme Rouge", desc:"Corsa ciclistica a carte, con Peloton e le tappe del Grand Tour.", online:true},
-  {repo:"SnowTails", img:"snowtails", title:"Snow Tails", orig:"corsa di slitte", desc:"Mute di husky su piste a tessere, con curve, crepacci e alberelli.", online:true},
-  {repo:"Status", img:"status", title:"STATUS", orig:"Nova Lectio", desc:"Quattro fazioni si contendono il governo con funzionari coperti ed eventi.", online:true},
-  {repo:"Endeavor", img:"endeavor", title:"Endeavor: Age of Sail", orig:"con gli Exploit", desc:"Esplorazione e commercio delle potenze marittime, contro l'IA o in hotseat.", online:false},
-  {repo:"Endeavor-Deep-Sea", img:"deepsea", title:"Endeavor: Deep Sea", orig:"esplorazione degli abissi", desc:"Spedizioni sottomarine, ricerca e conservazione degli oceani.", online:false},
-  {repo:"Black-Orchestra", img:"blackorch", title:"Black Orchestra", orig:"cooperativo", desc:"I cospiratori della resistenza tedesca contro Hitler, 1939–1945.", online:false},
-  {repo:"Principi-del-Rinascimento", img:"principi", title:"Principi del Rinascimento", orig:"Princes of the Renaissance", desc:"Famiglie nobili, città italiane, aste e guerre fra bluff e alleanze.", online:false},
-  {repo:"Cuba-Libre-GMT", img:"cubalibre", title:"Cuba Libre", orig:"Serie COIN · GMT Games", desc:"L'insorgenza di Castro, 1957–1958, contro il bot o in hotseat.", online:false},
-  {repo:"All-Bridge-Burning", img:"abb", title:"All Bridges Burning", orig:"GMT Games", desc:"Rivoluzione e guerra civile in Finlandia, 1917–1918.", online:false},
-  {repo:"Red-Dust-Rebellion-GMT", img:"reddust", title:"Red Dust Rebellion", orig:"Serie COIN · GMT Games", desc:"Insurrezione su Marte, fra corporazioni e coloni.", online:false},
-  {repo:"UncontitionalSurrender", img:"usurrender", title:"Unconditional Surrender!", orig:"Western Campaign · GMT Games", desc:"La Seconda guerra mondiale in Europa occidentale, con IA tattica.", online:false},
-  {repo:"Combat-Commander-Europe", img:"cce", title:"Combat Commander: Europe", orig:"GMT Games", desc:"Combattimento tattico di squadra a carte, Seconda guerra mondiale.", online:false},
-  {repo:"atlantic-chase-godot", img:"atlantic", title:"Atlantic Chase", orig:"GMT Games", desc:"La caccia alle navi della Kriegsmarine nell'Atlantico, 1939–1942.", online:false},
-  {repo:"Combat", img:"combat", title:"Combat!", orig:"Compass Games", desc:"Solitario tattico: guidi una compagnia contro il sistema di gioco.", online:false},
-  {repo:"Sunjuntsu", img:"senjutsu", title:"Senjutsu", orig:"Battle for Japan", desc:"Duello fra samurai su mappa esagonale con pedine 3D, solo o 1 contro 1.", online:false},
-  {repo:"voyage-of-BSM-Pandora", img:"pandora", title:"Il Viaggio della B.S.M. Pandora", orig:"esplorazione in solitario", desc:"Una nave spaziale e i mondi sconosciuti che incontra.", online:false},
-  {repo:"world-Order", img:"worldorder", title:"World Order", orig:"maggioranze d'area", desc:"Le potenze si contendono l'ordine mondiale, da 2 a 4 giocatori.", online:false},
-];
-const ORIGINALS = [
-  {repo:"ECHOES", img:"echoes", title:"ECHOES", orig:"Il consiglio delle case", desc:"Gioco narrativo e strategico: il mondo ricorda le scelte delle casate.", online:false},
-  {repo:"The-Street", img:"strada", title:"The Street", orig:"La Strada delle Ere", desc:"Una città che cresce a strati attraverso cinque ere.", online:false},
-];
-
+// L'elenco dei giochi (giochi.json) lo prepara ogni notte un'azione di GitHub, leggendo la cartella
+// "ludoteca" di ogni repository: per aggiungere un gioco basta quella cartella, non si tocca questa pagina.
+const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3 3 0 0 1 0 6"/><path d="M18 14.5c1.8.8 3 2.6 3 4.5"/></svg>';
 const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18h2"/></svg>';
 
@@ -147,29 +123,21 @@ function card(g){
   el.dataset.mode = g.online ? "online" : "local";
   el.innerHTML = `
     <div class="cover">
-      <img src="img/${g.img}.webp" alt="" loading="lazy" width="480" height="640">
+      ${g.img ? `<img src="${esc(g.img)}" alt="" loading="lazy" width="480" height="640">` : ""}
       <span class="tag ${g.online ? "on" : "off"}">${g.online ? ICON_ON + "Online" : ICON_OFF + "Su un dispositivo"}</span>
     </div>
     <div class="body">
-      <h3 class="title">${g.title}</h3>
-      <p class="orig">${g.orig}</p>
-      <p class="desc">${g.desc}</p>
+      <h3 class="title">${esc(g.titolo)}</h3>
+      <p class="orig">${esc(g.sottotitolo)}</p>
+      <p class="desc">${esc(g.descrizione)}</p>
       <div class="actions">
-        <a class="btn play" href="${BASE}${g.repo}/" aria-label="Gioca a ${g.title}">Gioca</a>
-        <a class="btn code" href="${GH}${g.repo}" aria-label="Codice di ${g.title} su GitHub">Codice</a>
+        <a class="btn play" href="${esc(g.gioca)}" aria-label="Gioca a ${esc(g.titolo)}">Gioca</a>
+        <a class="btn code" href="${esc(g.codice)}" aria-label="Codice di ${esc(g.titolo)} su GitHub">Codice</a>
       </div>
     </div>`;
   return el;
 }
 const conv = document.getElementById("conv"), orig = document.getElementById("orig");
-GAMES.forEach(g => conv.appendChild(card(g)));
-ORIGINALS.forEach(g => orig.appendChild(card(g)));
-const all = GAMES.concat(ORIGINALS);
-document.getElementById("stats").innerHTML =
-  `<div class="stat"><b>${all.length}</b><span>giochi nel browser</span></div>` +
-  `<div class="stat"><b>${all.filter(g=>g.online).length}</b><span>online con gli amici</span></div>` +
-  `<div class="stat"><b>${ORIGINALS.length}</b><span>giochi originali</span></div>`;
-
 const buttons = document.querySelectorAll(".filters button");
 function apply(f){
   buttons.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.f === f)));
@@ -180,7 +148,17 @@ function apply(f){
 buttons.forEach(b => b.addEventListener("click", () => apply(b.dataset.f)));
 let saved = "all";
 try { saved = localStorage.getItem("ludoteca-filtro") || "all"; } catch (e) {}
-apply(["all","online","local"].includes(saved) ? saved : "all");
+
+fetch("giochi.json", {cache: "no-cache"}).then(r => r.json()).then(all => {
+  all.forEach(g => (g.sezione === "originale" ? orig : conv).appendChild(card(g)));
+  document.getElementById("stats").innerHTML =
+    `<div class="stat"><b>${all.length}</b><span>giochi nel browser</span></div>` +
+    `<div class="stat"><b>${all.filter(g=>g.online).length}</b><span>online con gli amici</span></div>` +
+    `<div class="stat"><b>${all.filter(g=>g.sezione==="originale").length}</b><span>giochi originali</span></div>`;
+  apply(["all","online","local"].includes(saved) ? saved : "all");
+}).catch(() => {
+  conv.innerHTML = '<p class="sub">Non riesco a caricare l\'elenco dei giochi. Riprova fra poco.</p>';
+});
 </script>
 </body>
 </html>
