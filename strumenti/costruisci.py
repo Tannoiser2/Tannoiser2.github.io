@@ -41,7 +41,7 @@ def repository():
 def main(out):
     if os.path.exists(out):
         shutil.rmtree(out)
-    shutil.copytree(QUI, out, ignore=shutil.ignore_patterns(".git", ".github", "strumenti", os.path.basename(out)))
+    shutil.copytree(QUI, out, ignore=shutil.ignore_patterns(".git", ".github", "strumenti", "copertine", os.path.basename(out)))
     os.makedirs(os.path.join(out, "img"), exist_ok=True)
     giochi = []
     for r in repository():
@@ -60,7 +60,9 @@ def main(out):
         if s.get("nascosto"):
             continue
         img = ""
-        cop = scarica(base + "copertina.webp")
+        # una copertina in copertine/<repository>.webp di questo repository ha la precedenza
+        locale = os.path.join(QUI, "copertine", nome + ".webp")
+        cop = open(locale, "rb").read() if os.path.exists(locale) else scarica(base + "copertina.webp")
         if cop:
             img = f"img/{nome}.webp"
             with open(os.path.join(out, img), "wb") as f:
