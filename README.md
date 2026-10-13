@@ -15,7 +15,8 @@ Per aggiungere un gioco nuovo, nel suo repository:
 ```
 ludoteca/
   scheda.json      ← i dati della scheda
-  copertina.webp   ← immagine verticale 480×640 (va bene anche più grande, purché 3:4)
+  copertina.webp   ← la copertina della scatola, nelle sue proporzioni (quadrata, verticale
+                     o orizzontale: la pagina non la taglia), larga 480–600 pixel
   .gdignore        ← file vuoto: Godot non importa la cartella (solo progetti Godot)
 ```
 

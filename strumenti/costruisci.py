@@ -28,6 +28,24 @@ def scarica(url, api=False):
         raise
 
 
+def misure_webp(dati):
+    """Larghezza e altezza di un'immagine WebP (o None), senza librerie esterne."""
+    try:
+        if dati[:4] != b"RIFF" or dati[8:12] != b"WEBP":
+            return None
+        tipo = dati[12:16]
+        if tipo == b"VP8X":
+            return 1 + int.from_bytes(dati[24:27], "little"), 1 + int.from_bytes(dati[27:30], "little")
+        if tipo == b"VP8 ":
+            return int.from_bytes(dati[26:28], "little") & 0x3FFF, int.from_bytes(dati[28:30], "little") & 0x3FFF
+        if tipo == b"VP8L":
+            b = int.from_bytes(dati[21:25], "little")
+            return 1 + (b & 0x3FFF), 1 + ((b >> 14) & 0x3FFF)
+    except Exception:
+        pass
+    return None
+
+
 def repository():
     tutti, pagina = [], 1
     while True:
@@ -78,6 +96,8 @@ def main(out):
             "gioca": s.get("gioca") or f"https://{UTENTE.lower()}.github.io/{nome}/",
             "codice": r["html_url"],
             "img": img,
+            "w": misure[0] if misure else 0,
+            "h": misure[1] if misure else 0,
         })
         print(f"ok {nome}: {giochi[-1]['titolo']}" + ("" if img else " (senza copertina)"))
     if not giochi:
