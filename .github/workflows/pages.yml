@@ -27,6 +27,7 @@ jobs:
       - name: Raccoglie i giochi dai repository
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BGG_TOKEN: ${{ secrets.BGG_TOKEN }}
         run: python3 strumenti/costruisci.py _site
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -7,9 +7,11 @@ Uso: python3 strumenti/costruisci.py OUT
 Variabili: GITHUB_TOKEN (facoltativa, alza il limite di richieste), LUDOTECA_UTENTE.
 """
 import json, os, shutil, sys, time, traceback, urllib.request, urllib.error
+import xml.etree.ElementTree as ET
 
 UTENTE = os.environ.get("LUDOTECA_UTENTE", "Tannoiser2")
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
+BGG_TOKEN = os.environ.get("BGG_TOKEN", "")
 QUI = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -79,13 +81,86 @@ def generi_predefiniti():
 
 
 GENERI = {}
+BGG_ID = {}
+
+
+def leggi_json(nome):
+    try:
+        with open(os.path.join(QUI, nome), encoding="utf-8") as f:
+            return {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+    except (OSError, ValueError):
+        return {}
+
+
+def info_bgg(ids):
+    """Scarica da BoardGameGeek (XML API2, serve BGG_TOKEN) giocatori, durata, età, anno, autori, voto, peso
+    e posizione in classifica. Restituisce {id: {...}}; in caso di errore un dizionario vuoto (la pagina
+    mostra comunque il collegamento alla scheda BGG)."""
+    out = {}
+    if not BGG_TOKEN or not ids:
+        if ids:
+            print("BGG: nessun BGG_TOKEN, mostro solo i collegamenti")
+        return out
+    ids = sorted(set(ids))
+    for i in range(0, len(ids), 20):
+        url = "https://boardgamegeek.com/xmlapi2/thing?stats=1&id=" + ",".join(str(x) for x in ids[i:i + 20])
+        dati = None
+        for tentativo in range(5):
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "ludoteca", "Authorization": "Bearer " + BGG_TOKEN})
+                with urllib.request.urlopen(req, timeout=40) as r:
+                    if r.status == 202:      # BGG prepara la risposta: riprovare
+                        time.sleep(4 * (tentativo + 1))
+                        continue
+                    dati = r.read()
+                    break
+            except Exception as e:
+                print(f"BGG: tentativo {tentativo + 1} fallito ({e})")
+                time.sleep(4 * (tentativo + 1))
+        if not dati:
+            continue
+        try:
+            radice = ET.fromstring(dati)
+        except ET.ParseError:
+            continue
+        for it in radice.findall("item"):
+            def val(tag, d=""):
+                n = it.find(tag)
+                return n.get("value", d) if n is not None else d
+            nomi = [n.get("value") for n in it.findall("name") if n.get("type") == "primary"]
+            link = lambda t: [l.get("value") for l in it.findall("link") if l.get("type") == t]
+            st = it.find("statistics/ratings")
+            def sv(tag):
+                n = st.find(tag) if st is not None else None
+                try:
+                    return round(float(n.get("value")), 2) if n is not None else 0
+                except (TypeError, ValueError):
+                    return 0
+            rank = ""
+            if st is not None:
+                for rk in st.findall("ranks/rank"):
+                    if rk.get("name") == "boardgame" and rk.get("value", "").isdigit():
+                        rank = int(rk.get("value"))
+            num = lambda x: int(x) if str(x).isdigit() else 0
+            out[int(it.get("id"))] = {
+                "nome": nomi[0] if nomi else "", "anno": num(val("yearpublished")),
+                "min": num(val("minplayers")), "max": num(val("maxplayers")),
+                "tmin": num(val("minplaytime")), "tmax": num(val("maxplaytime")), "eta": num(val("minage")),
+                "autori": link("boardgamedesigner")[:3], "editori": link("boardgamepublisher")[:2],
+                "categorie": link("boardgamecategory"), "meccaniche": link("boardgamemechanic")[:6],
+                "voto": sv("average"), "peso": sv("averageweight"), "classifica": rank,
+            }
+        time.sleep(2)
+    print(f"BGG: informazioni per {len(out)} giochi")
+    return out
 
 
 def main(out):
     GENERI.update(generi_predefiniti())
+    BGG_ID.update(leggi_json("bgg.json"))
     if os.path.exists(out):
         shutil.rmtree(out)
-    shutil.copytree(QUI, out, ignore=shutil.ignore_patterns(".git", ".github", "strumenti", "copertine", "generi.json", os.path.basename(out)))
+    shutil.copytree(QUI, out, ignore=shutil.ignore_patterns(".git", ".github", "strumenti", "copertine", "generi.json", "bgg.json", os.path.basename(out)))
     os.makedirs(os.path.join(out, "img"), exist_ok=True)
     giochi = []
     for r in repository():
@@ -103,6 +178,10 @@ def main(out):
     if not giochi:
         sys.exit("Nessun gioco trovato: non pubblico una ludoteca vuota.")
     giochi.sort(key=lambda g: (g["ordine"], g["titolo"].lower()))
+    info = info_bgg([g["bgg"]["id"] for g in giochi if g.get("bgg")])
+    for g in giochi:
+        if g.get("bgg") and g["bgg"]["id"] in info:
+            g["bgg"].update(info[g["bgg"]["id"]])
     with open(os.path.join(out, "giochi.json"), "w", encoding="utf-8") as f:
         json.dump(giochi, f, ensure_ascii=False, indent=1)
     print(f"{len(giochi)} giochi")
@@ -138,10 +217,15 @@ def scheda(r, out):
             img = f"img/{nome}.webp"
             with open(os.path.join(out, img), "wb") as f:
                 f.write(cop)
+        try:
+            bid = int(s.get("bgg") or BGG_ID.get(nome) or 0)
+        except (TypeError, ValueError):
+            bid = 0
         generi = s.get("generi") if isinstance(s.get("generi"), list) else GENERI.get(nome, [])
         return {
             "repo": nome,
             "generi": [str(x) for x in generi],
+            "bgg": {"id": bid, "url": f"https://boardgamegeek.com/boardgame/{bid}"} if bid else None,
             "titolo": str(s.get("titolo") or nome),
             "sottotitolo": s.get("sottotitolo", ""),
             "descrizione": s.get("descrizione", ""),

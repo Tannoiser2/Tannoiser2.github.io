@@ -53,6 +53,11 @@ h1{font-family:Fraunces,Georgia,serif;font-weight:800;font-size:clamp(36px,6vw,6
 .gtags{display:flex;gap:4px;flex-wrap:wrap;margin:0}
 .gtags span{font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--muted);background:var(--local-bg);padding:2px 8px;border-radius:999px}
 .empty{color:var(--muted);padding:20px 0}
+.facts{display:flex;flex-wrap:wrap;gap:4px 12px;margin:0;font-size:12.5px;color:var(--muted)}
+.facts b{color:var(--ink);font-weight:600}
+.by{font-size:12.5px;color:var(--muted);margin:0}
+.btn.bgg{flex:0 0 auto;background:transparent;font-size:13px}
+.btn.bgg:hover{background:var(--local-bg)}
 h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:26px;margin:34px 0 4px}
 .sub{color:var(--muted);margin:0 0 18px;font-size:15px}
 /* Copertine nelle proporzioni originali (quadrate, verticali o orizzontali): niente tagli né bande.
@@ -133,6 +138,19 @@ const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3 3 0 0 1 0 6"/><path d="M18 14.5c1.8.8 3 2.6 3 4.5"/></svg>';
 const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18h2"/></svg>';
 
+// Dati da BoardGameGeek (se il sito è stato costruito con il token BGG): giocatori, durata, peso, voto.
+function facts(b){
+  if (!b || !b.max) return "";
+  const pl = b.min === b.max ? `${b.min}` : `${b.min}–${b.max}`;
+  const t = !b.tmax ? "" : (b.tmin && b.tmin !== b.tmax ? `${b.tmin}–${b.tmax}′` : `${b.tmax}′`);
+  const num = x => String(x).replace(".", ",");
+  const parts = [`<span><b>${pl}</b> giocatori</span>`];
+  if (t) parts.push(`<span><b>${t}</b></span>`);
+  if (b.peso) parts.push(`<span title="Complessità su BGG (1–5)">peso <b>${num(b.peso.toFixed(1))}</b>/5</span>`);
+  if (b.voto) parts.push(`<span title="Voto medio su BGG${b.classifica ? " · " + b.classifica + "° in classifica" : ""}">★ <b>${num(b.voto.toFixed(1))}</b></span>`);
+  const by = (b.autori || []).length ? `<p class="by">${esc(b.autori.join(", "))}${b.anno ? " · " + b.anno : ""}</p>` : "";
+  return `<p class="facts">${parts.join("")}</p>${by}`;
+}
 function card(g){
   const el = document.createElement("article");
   el.className = "card";
@@ -147,9 +165,11 @@ function card(g){
       <h3 class="title">${esc(g.titolo)}</h3>
       <p class="orig">${esc(g.sottotitolo)}</p>
       ${(g.generi || []).length ? `<p class="gtags">${g.generi.map(x => `<span>${esc(x)}</span>`).join("")}</p>` : ""}
+      ${facts(g.bgg)}
       <p class="desc">${esc(g.descrizione)}</p>
       <div class="actions">
         <a class="btn play" href="${esc(g.gioca)}" aria-label="Gioca a ${esc(g.titolo)}">Gioca</a>
+        ${g.bgg ? `<a class="btn bgg" href="${esc(g.bgg.url)}" target="_blank" rel="noopener" aria-label="${esc(g.titolo)} su BoardGameGeek">BGG</a>` : ""}
         <a class="btn code" href="${esc(g.codice)}" aria-label="Codice di ${esc(g.titolo)} su GitHub">Codice</a>
       </div>
     </div>`;

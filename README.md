@@ -49,3 +49,15 @@ Lo script che costruisce il sito è `strumenti/costruisci.py`.
 La pagina mostra una riga di filtri «Genere» (COIN, Wargame, Fantasy, Storici, Sport e corse…) che si
 combinano con Online/Su un dispositivo. I generi stanno in `generi.json` (uno o più per gioco); un gioco può
 anche dichiararli da sé con il campo `generi` della propria `scheda.json`, che ha la precedenza.
+
+## Collegamento a BoardGameGeek
+
+Ogni gioco ha il pulsante **BGG** verso la sua scheda su BoardGameGeek. I codici BGG stanno in `bgg.json`
+(chiave = nome del repository); un gioco può indicarlo da sé con il campo `"bgg": <numero>` nella propria
+`scheda.json`.
+
+Con il segreto **`BGG_TOKEN`** (Settings → Secrets and variables → Actions → *New repository secret*) la
+costruzione notturna scarica anche giocatori, durata, peso, voto medio, autori e anno dalla XML API di BGG e li
+mostra sulle schede. Il token si ottiene registrando un'applicazione non commerciale su
+https://boardgamegeek.com/applications (dopo l'approvazione: *Tokens* → crea). Senza token la pagina mostra solo
+il collegamento.
