@@ -82,6 +82,7 @@ def generi_predefiniti():
 
 GENERI = {}
 BGG_ID = {}
+STATO_BGG = {"msg": ""}
 
 
 def leggi_json(nome):
@@ -100,6 +101,7 @@ def info_bgg(ids):
     if not BGG_TOKEN or not ids:
         if ids:
             print("BGG: nessun BGG_TOKEN, mostro solo i collegamenti")
+            STATO_BGG["msg"] = "manca il segreto BGG_TOKEN"
         return out
     ids = sorted(set(ids))
     for i in range(0, len(ids), 20):
@@ -114,8 +116,15 @@ def info_bgg(ids):
                         continue
                     dati = r.read()
                     break
+            except urllib.error.HTTPError as e:
+                print(f"BGG: tentativo {tentativo + 1} fallito (HTTP {e.code})")
+                STATO_BGG["msg"] = f"BGG ha risposto HTTP {e.code}" + (" (token non valido o applicazione non ancora approvata)" if e.code in (401, 403) else "")
+                if e.code in (401, 403):
+                    return out
+                time.sleep(4 * (tentativo + 1))
             except Exception as e:
                 print(f"BGG: tentativo {tentativo + 1} fallito ({e})")
+                STATO_BGG["msg"] = f"errore di rete verso BGG ({type(e).__name__})"
                 time.sleep(4 * (tentativo + 1))
         if not dati:
             continue
@@ -152,6 +161,8 @@ def info_bgg(ids):
             }
         time.sleep(2)
     print(f"BGG: informazioni per {len(out)} giochi")
+    if out:
+        STATO_BGG["msg"] = ""
     return out
 
 
@@ -184,6 +195,10 @@ def main(out):
             g["bgg"].update(info[g["bgg"]["id"]])
     with open(os.path.join(out, "giochi.json"), "w", encoding="utf-8") as f:
         json.dump(giochi, f, ensure_ascii=False, indent=1)
+    with open(os.path.join(out, "stato.json"), "w", encoding="utf-8") as f:
+        json.dump({"costruita": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()),
+                   "bgg_giochi": len(info), "bgg_token": bool(BGG_TOKEN), "bgg_problema": STATO_BGG["msg"]},
+                  f, ensure_ascii=False, indent=1)
     print(f"{len(giochi)} giochi")
 
 
