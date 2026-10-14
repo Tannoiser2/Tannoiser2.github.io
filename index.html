@@ -44,6 +44,15 @@ h1{font-family:Fraunces,Georgia,serif;font-weight:800;font-size:clamp(36px,6vw,6
 .filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .filters button:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .legend{font-size:13px;color:var(--muted)}
+.genres{display:flex;gap:6px;flex-wrap:wrap;padding:4px 0 6px}
+.genres:empty{display:none}
+.genres button{font:inherit;font-size:13px;font-weight:500;border:1px dashed var(--line);background:transparent;color:var(--muted);padding:6px 12px;border-radius:999px;cursor:pointer}
+.genres button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent)}
+.genres button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.genres .lbl{font-size:13px;color:var(--muted);align-self:center;margin-right:4px}
+.gtags{display:flex;gap:4px;flex-wrap:wrap;margin:0}
+.gtags span{font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--muted);background:var(--local-bg);padding:2px 8px;border-radius:999px}
+.empty{color:var(--muted);padding:20px 0}
 h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:26px;margin:34px 0 4px}
 .sub{color:var(--muted);margin:0 0 18px;font-size:15px}
 /* Copertine nelle proporzioni originali (quadrate, verticali o orizzontali): niente tagli né bande.
@@ -94,6 +103,8 @@ footer p{margin:0 0 6px;max-width:760px}
     </div>
     <span class="legend">Online: stanza con codice di 4 lettere · Su un dispositivo: contro l'IA o passandosi il dispositivo</span>
   </div>
+  <div class="genres" id="genres" role="group" aria-label="Filtra per genere"></div>
+  <p class="empty hidden" id="empty">Nessun gioco con questi filtri.</p>
 
   <section>
     <h2>Conversioni</h2>
@@ -126,6 +137,7 @@ function card(g){
   const el = document.createElement("article");
   el.className = "card";
   el.dataset.mode = g.online ? "online" : "local";
+  el.dataset.genres = JSON.stringify(g.generi || []);
   el.innerHTML = `
     <div class="cover${g.img ? " nat" : ""}">
       ${g.img ? `<img src="${esc(g.img)}" alt="" loading="lazy"${g.w && g.h ? ` width="${g.w}" height="${g.h}"` : ""}>` : ""}
@@ -134,6 +146,7 @@ function card(g){
     <div class="body">
       <h3 class="title">${esc(g.titolo)}</h3>
       <p class="orig">${esc(g.sottotitolo)}</p>
+      ${(g.generi || []).length ? `<p class="gtags">${g.generi.map(x => `<span>${esc(x)}</span>`).join("")}</p>` : ""}
       <p class="desc">${esc(g.descrizione)}</p>
       <div class="actions">
         <a class="btn play" href="${esc(g.gioca)}" aria-label="Gioca a ${esc(g.titolo)}">Gioca</a>
@@ -144,15 +157,25 @@ function card(g){
 }
 const conv = document.getElementById("conv"), orig = document.getElementById("orig");
 const buttons = document.querySelectorAll(".filters button");
-function apply(f){
-  buttons.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.f === f)));
-  document.querySelectorAll(".card").forEach(c => c.classList.toggle("hidden", f !== "all" && c.dataset.mode !== f));
-  document.querySelectorAll("section").forEach(s => s.classList.toggle("hidden", !s.querySelector(".card:not(.hidden)")));
-  try { localStorage.setItem("ludoteca-filtro", f); } catch (e) {}
+let mode = "all", genre = "";
+function apply(f, gen){
+  if (f !== undefined) mode = f;
+  if (gen !== undefined) genre = gen;
+  buttons.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.f === mode)));
+  document.querySelectorAll("#genres button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.g === genre)));
+  document.querySelectorAll(".card").forEach(c => {
+    const okMode = mode === "all" || c.dataset.mode === mode;
+    const okGen = !genre || JSON.parse(c.dataset.genres || "[]").includes(genre);
+    c.classList.toggle("hidden", !(okMode && okGen));
+  });
+  let any = false;
+  document.querySelectorAll("section").forEach(s => { const v = !!s.querySelector(".card:not(.hidden)"); any = any || v; s.classList.toggle("hidden", !v); });
+  document.getElementById("empty").classList.toggle("hidden", any);
+  try { localStorage.setItem("ludoteca-filtro", mode); localStorage.setItem("ludoteca-genere", genre); } catch (e) {}
 }
 buttons.forEach(b => b.addEventListener("click", () => apply(b.dataset.f)));
-let saved = "all";
-try { saved = localStorage.getItem("ludoteca-filtro") || "all"; } catch (e) {}
+let saved = "all", savedGen = "";
+try { saved = localStorage.getItem("ludoteca-filtro") || "all"; savedGen = localStorage.getItem("ludoteca-genere") || ""; } catch (e) {}
 
 fetch("giochi.json", {cache: "no-cache"}).then(r => r.json()).then(all => {
   all.forEach(g => (g.sezione === "originale" ? orig : conv).appendChild(card(g)));
@@ -160,7 +183,17 @@ fetch("giochi.json", {cache: "no-cache"}).then(r => r.json()).then(all => {
     `<div class="stat"><b>${all.length}</b><span>giochi nel browser</span></div>` +
     `<div class="stat"><b>${all.filter(g=>g.online).length}</b><span>online con gli amici</span></div>` +
     `<div class="stat"><b>${all.filter(g=>g.sezione==="originale").length}</b><span>giochi originali</span></div>`;
-  apply(["all","online","local"].includes(saved) ? saved : "all");
+  // generi presenti, in ordine di frequenza
+  const conta = {};
+  all.forEach(g => (g.generi || []).forEach(x => conta[x] = (conta[x] || 0) + 1));
+  const nomi = Object.keys(conta).sort((a, b) => conta[b] - conta[a] || a.localeCompare(b, "it"));
+  const gbox = document.getElementById("genres");
+  if (nomi.length) {
+    gbox.innerHTML = '<span class="lbl">Genere:</span><button type="button" data-g="" aria-pressed="true">Tutti</button>' +
+      nomi.map(n => `<button type="button" data-g="${esc(n)}" aria-pressed="false">${esc(n)} <small>${conta[n]}</small></button>`).join("");
+    gbox.querySelectorAll("button").forEach(b => b.addEventListener("click", () => apply(undefined, b.dataset.g === genre ? "" : b.dataset.g)));
+  }
+  apply(["all","online","local"].includes(saved) ? saved : "all", nomi.includes(savedGen) ? savedGen : "");
 }).catch(() => {
   conv.innerHTML = '<p class="sub">Non riesco a caricare l\'elenco dei giochi. Riprova fra poco.</p>';
 });

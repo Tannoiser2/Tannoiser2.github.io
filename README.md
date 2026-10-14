@@ -36,8 +36,16 @@ ludoteca/
 - `online`: `true` se il gioco ha le stanze per giocare online con gli amici.
 - `sezione`: `"conversione"` oppure `"originale"`.
 - `ordine`: posizione nell'elenco (numeri più bassi prima; i giochi attuali vanno da 10 a 190; fra due posizioni vicine si può usare un numero intermedio, come Primal 175, Kingsburg 178, Churchill 179 e Burning Banners 180).
+- `generi` (facoltativo): elenco di generi per i filtri della pagina, es. `["COIN", "Wargame"]`.
+  Se manca vale quello scritto in `generi.json` di questo repository (chiave = nome del repository).
 - Facoltativi: `"gioca"` per un indirizzo diverso da `https://tannoiser2.github.io/<repository>/`,
   `"nascosto": true` per togliere il gioco dalla pagina senza cancellare la cartella.
 
 Per togliere un gioco basta cancellare la cartella (o renderlo privato / archiviarlo).
 Lo script che costruisce il sito è `strumenti/costruisci.py`.
+
+## Filtri per genere
+
+La pagina mostra una riga di filtri «Genere» (COIN, Wargame, Fantasy, Storici, Sport e corse…) che si
+combinano con Online/Su un dispositivo. I generi stanno in `generi.json` (uno o più per gioco); un gioco può
+anche dichiararli da sé con il campo `generi` della propria `scheda.json`, che ha la precedenza.

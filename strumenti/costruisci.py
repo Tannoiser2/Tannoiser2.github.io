@@ -70,10 +70,22 @@ def repository():
         pagina += 1
 
 
+def generi_predefiniti():
+    try:
+        with open(os.path.join(QUI, "generi.json"), encoding="utf-8") as f:
+            return {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+    except (OSError, ValueError):
+        return {}
+
+
+GENERI = {}
+
+
 def main(out):
+    GENERI.update(generi_predefiniti())
     if os.path.exists(out):
         shutil.rmtree(out)
-    shutil.copytree(QUI, out, ignore=shutil.ignore_patterns(".git", ".github", "strumenti", "copertine", os.path.basename(out)))
+    shutil.copytree(QUI, out, ignore=shutil.ignore_patterns(".git", ".github", "strumenti", "copertine", "generi.json", os.path.basename(out)))
     os.makedirs(os.path.join(out, "img"), exist_ok=True)
     giochi = []
     for r in repository():
@@ -126,8 +138,10 @@ def scheda(r, out):
             img = f"img/{nome}.webp"
             with open(os.path.join(out, img), "wb") as f:
                 f.write(cop)
+        generi = s.get("generi") if isinstance(s.get("generi"), list) else GENERI.get(nome, [])
         return {
             "repo": nome,
+            "generi": [str(x) for x in generi],
             "titolo": str(s.get("titolo") or nome),
             "sottotitolo": s.get("sottotitolo", ""),
             "descrizione": s.get("descrizione", ""),
