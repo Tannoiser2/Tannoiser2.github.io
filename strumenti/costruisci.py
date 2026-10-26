@@ -5,12 +5,16 @@ index.html e il resto del repository, giochi.json e le copertine in img/.
 
 Uso: python3 strumenti/costruisci.py OUT
 Variabili: GITHUB_TOKEN (facoltativa, alza il limite di richieste), LUDOTECA_UTENTE.
+  LUDOTECA_TOKEN: token GitHub di sola lettura che vede anche i repository privati. Con questo i giochi
+  privati entrano nella ludoteca e il pulsante Gioca porta al loro indirizzo privato
+  https://<repository in minuscolo>.<dominio>/ (dominio in cloudflare.json).
 """
 import json, os, shutil, sys, time, traceback, urllib.request, urllib.error
 import xml.etree.ElementTree as ET
 
 UTENTE = os.environ.get("LUDOTECA_UTENTE", "Tannoiser2")
-TOKEN = os.environ.get("GITHUB_TOKEN", "")
+TOKEN = os.environ.get("LUDOTECA_TOKEN") or os.environ.get("GITHUB_TOKEN", "")
+PRIVATI = bool(os.environ.get("LUDOTECA_TOKEN"))
 BGG_TOKEN = os.environ.get("BGG_TOKEN", "")
 QUI = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -33,7 +37,7 @@ def _scarica(url, api=False):
     req = urllib.request.Request(url, headers={"User-Agent": "ludoteca"})
     if api:
         req.add_header("Accept", "application/vnd.github+json")
-    if TOKEN and api:
+    if TOKEN and (api or (PRIVATI and "githubusercontent.com" in url)):
         req.add_header("Authorization", "Bearer " + TOKEN)
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
@@ -65,7 +69,11 @@ def misure_webp(dati):
 def repository():
     tutti, pagina = [], 1
     while True:
-        dati = json.loads(scarica(f"https://api.github.com/users/{UTENTE}/repos?per_page=100&page={pagina}", api=True))
+        if PRIVATI:  # anche i privati: serve il token del proprietario
+            url = f"https://api.github.com/user/repos?affiliation=owner&visibility=all&per_page=100&page={pagina}"
+        else:
+            url = f"https://api.github.com/users/{UTENTE}/repos?per_page=100&page={pagina}"
+        dati = json.loads(scarica(url, api=True))
         if not dati:
             return tutti
         tutti += dati
@@ -171,11 +179,11 @@ def main(out):
     BGG_ID.update(leggi_json("bgg.json"))
     if os.path.exists(out):
         shutil.rmtree(out)
-    shutil.copytree(QUI, out, ignore=shutil.ignore_patterns(".git", ".github", "strumenti", "copertine", "generi.json", "bgg.json", os.path.basename(out)))
+    shutil.copytree(QUI, out, ignore=shutil.ignore_patterns(".git", ".github", "strumenti", "copertine", "generi.json", "bgg.json", "cloudflare.json", os.path.basename(out)))
     os.makedirs(os.path.join(out, "img"), exist_ok=True)
     giochi = []
     for r in repository():
-        if r.get("archived") or r.get("fork") or r.get("private"):
+        if r.get("archived") or r.get("fork") or (r.get("private") and not PRIVATI):
             continue
         try:
             g = scheda(r, out)
@@ -200,6 +208,26 @@ def main(out):
                    "bgg_giochi": len(info), "bgg_token": bool(BGG_TOKEN), "bgg_problema": STATO_BGG["msg"]},
                   f, ensure_ascii=False, indent=1)
     print(f"{len(giochi)} giochi")
+
+
+def dominio_privato():
+    try:
+        with open(os.path.join(QUI, "cloudflare.json"), encoding="utf-8") as f:
+            return (json.load(f).get("dominio") or "").strip().lower()
+    except (OSError, ValueError):
+        return ""
+
+
+def progetto_cloudflare(nome):
+    """Nome del progetto Cloudflare Pages e del sottodominio di un gioco: il repository in minuscolo."""
+    return "".join(c if c.isalnum() else "-" for c in nome.lower()).strip("-")
+
+
+def indirizzo(nome, privato):
+    d = dominio_privato()
+    if privato and d:
+        return f"https://{progetto_cloudflare(nome)}.{d}/"
+    return f"https://{UTENTE.lower()}.github.io/{nome}/"
 
 
 def numero(v, predefinito=1000):
@@ -247,7 +275,7 @@ def scheda(r, out):
             "online": bool(s.get("online", False)),
             "sezione": "originale" if s.get("sezione") == "originale" else "conversione",
             "ordine": numero(s.get("ordine")),
-            "gioca": s.get("gioca") or f"https://{UTENTE.lower()}.github.io/{nome}/",
+            "gioca": s.get("gioca") or indirizzo(nome, r.get("private")),
             "codice": r["html_url"],
             "img": img,
             "w": misure[0] if misure else 0,

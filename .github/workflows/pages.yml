@@ -27,8 +27,24 @@ jobs:
       - name: Raccoglie i giochi dai repository
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LUDOTECA_TOKEN: ${{ secrets.LUDOTECA_TOKEN }}
           BGG_TOKEN: ${{ secrets.BGG_TOKEN }}
         run: python3 strumenti/costruisci.py _site
+      # Ludoteca privata: con i segreti CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID e il dominio in
+      # cloudflare.json pubblica la stessa pagina sul dominio privato e aggiorna chi può entrare.
+      # Senza segreti questi due passi non fanno nulla.
+      - name: Aggiorna chi può entrare (Cloudflare Access)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: python3 strumenti/accesso_cloudflare.py
+      - name: Pubblica la ludoteca privata su Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          export LUDOTECA_DOMINIO=$(python3 -c "import json;print(json.load(open('cloudflare.json')).get('dominio',''))")
+          python3 strumenti/pubblica_cloudflare.py _site ludoteca @
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

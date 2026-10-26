@@ -61,3 +61,16 @@ costruzione notturna scarica anche giocatori, durata, peso, voto medio, autori e
 mostra sulle schede. Il token si ottiene registrando un'applicazione non commerciale su
 https://boardgamegeek.com/applications (dopo l'approvazione: *Tokens* → crea). Senza token la pagina mostra solo
 il collegamento.
+
+## Ludoteca privata (Cloudflare)
+
+La ludoteca e i giochi si stanno spostando su un dominio privato: chi apre la pagina inserisce la propria
+email, riceve un codice e entra solo se la sua email è nell'elenco `accessi` di `cloudflare.json`.
+
+- `cloudflare.json`: il dominio e le email ammesse. Per aggiungere un amico basta scrivere qui la sua email.
+- Segreti di questo repository: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` e `LUDOTECA_TOKEN` (token GitHub di
+  sola lettura che vede anche i repository privati).
+- `strumenti/accesso_cloudflare.py` configura la protezione (Cloudflare Access) per il dominio e tutti i suoi
+  sottodomini; `strumenti/pubblica_cloudflare.py` pubblica un sito su Cloudflare Pages e non lo mette online sul
+  dominio se la protezione non c'è ancora.
+- Un gioco con il repository privato si apre da `https://<repository in minuscolo>.<dominio>/`.
