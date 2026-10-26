@@ -53,17 +53,67 @@ def cf(metodo, percorso, dati=None, ok404=False):
         esci(f"Cloudflare {metodo} {percorso}: HTTP {e.code} {corpo[:800]}")
 
 
-MIDDLEWARE = """// Chi arriva dall'indirizzo *.pages.dev viene rimandato al dominio privato (protetto da Access).
+# Cloudflare Pages accetta file fino a 25 MiB: quelli più grandi (index.wasm, index.pck dei giochi Godot)
+# vengono divisi in pezzi «<file>.parteN» e il middleware li riunisce al volo quando il browser li chiede.
+LIMITE = 24 * 1024 * 1024
+PEZZO = 20 * 1024 * 1024
+TIPI = {".wasm": "application/wasm", ".pck": "application/octet-stream", ".js": "text/javascript",
+        ".json": "application/json", ".zip": "application/zip"}
+
+MIDDLEWARE = """// Generato da pubblica_cloudflare.py
+const HOST = %(host)s;
+const GRANDI = %(grandi)s;  // file divisi in pezzi: percorso -> {parti, dim, tipo}
+
 export async function onRequest(ctx) {
   const url = new URL(ctx.request.url);
+  // chi arriva dall'indirizzo *.pages.dev viene rimandato al dominio privato (protetto da Access)
   if (url.hostname.endsWith(".pages.dev")) {
-    url.hostname = "%s";
+    url.hostname = HOST;
     url.port = "";
     return Response.redirect(url.toString(), 301);
   }
-  return ctx.next();
+  const g = GRANDI[decodeURIComponent(url.pathname)];
+  if (!g || (ctx.request.method !== "GET" && ctx.request.method !== "HEAD")) return ctx.next();
+  const headers = {"Content-Type": g.tipo, "Content-Length": String(g.dim), "Cache-Control": "public, max-age=3600"};
+  if (ctx.request.method === "HEAD") return new Response(null, {headers});
+  const {readable, writable} = new FixedLengthStream(g.dim);
+  const unisci = (async () => {
+    for (let i = 0; i < g.parti; i++) {
+      const r = await ctx.env.ASSETS.fetch(new URL(url.pathname + ".parte" + i, url.origin));
+      if (!r.ok) throw new Error("pezzo mancante " + i);
+      await r.body.pipeTo(writable, {preventClose: true});
+    }
+    await writable.close();
+  })();
+  ctx.waitUntil(unisci.catch(e => writable.abort(e)));
+  return new Response(readable, {headers});
 }
 """
+
+
+def dividi_grandi(sito):
+    """Divide in pezzi i file oltre il limite di Cloudflare Pages; restituisce l'elenco per il middleware."""
+    grandi = {}
+    for radice, _, nomi in os.walk(sito):
+        for n in nomi:
+            f = os.path.join(radice, n)
+            dim = os.path.getsize(f)
+            if dim <= LIMITE:
+                continue
+            rel = "/" + os.path.relpath(f, sito).replace(os.sep, "/")
+            parti = 0
+            with open(f, "rb") as src:
+                while True:
+                    blocco = src.read(PEZZO)
+                    if not blocco:
+                        break
+                    with open(f"{f}.parte{parti}", "wb") as dst:
+                        dst.write(blocco)
+                    parti += 1
+            os.remove(f)
+            grandi[rel] = {"parti": parti, "dim": dim, "tipo": TIPI.get(os.path.splitext(n)[1], "application/octet-stream")}
+            avviso(f"Cloudflare: {rel} ({dim // (1024 * 1024)} MB) diviso in {parti} pezzi")
+    return grandi
 
 
 def main(cartella, progetto, sotto):
@@ -91,12 +141,14 @@ def main(cartella, progetto, sotto):
 
     # 2-3. middleware e caricamento (wrangler cerca la cartella functions/ nella cartella da cui parte)
     lavoro = tempfile.mkdtemp()
+    sito = os.path.join(lavoro, "sito")
+    shutil.copytree(os.path.abspath(cartella), sito)
+    grandi = dividi_grandi(sito)
     os.makedirs(os.path.join(lavoro, "functions"))
     with open(os.path.join(lavoro, "functions", "_middleware.js"), "w") as f:
-        f.write(MIDDLEWARE % host)
-    sito = os.path.abspath(cartella)
+        f.write(MIDDLEWARE % {"host": json.dumps(host), "grandi": json.dumps(grandi)})
     r = subprocess.run(["npx", "--yes", "wrangler@3", "pages", "deploy", sito, "--project-name", progetto,
-                    "--branch", "main", "--commit-dirty=true"], cwd=lavoro, check=True,
+                    "--branch", "main", "--commit-dirty=true"], cwd=lavoro,
                    env=dict(os.environ, CI="1"), capture_output=True, text=True)
     print(r.stdout[-4000:], r.stderr[-4000:])
     if r.returncode:
@@ -123,4 +175,11 @@ def main(cartella, progetto, sotto):
 if __name__ == "__main__":
     if len(sys.argv) != 4:
         sys.exit(__doc__)
-    main(*sys.argv[1:])
+    try:
+        main(*sys.argv[1:])
+    except SystemExit:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        esci(f"Errore imprevisto: {type(e).__name__}: {e}")
