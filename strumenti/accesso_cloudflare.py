@@ -11,7 +11,7 @@ cloudflare.json e la ludoteca si ripubblica da sola.
 import json, os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pubblica_cloudflare import cf, TOKEN, CONTO  # noqa: E402
+from pubblica_cloudflare import cf, TOKEN, CONTO, avviso  # noqa: E402
 
 QUI = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NOME_APP = "Ludoteca"
@@ -24,7 +24,7 @@ def main():
     dominio = (conf.get("dominio") or "").strip().lower()
     email = sorted({e.strip().lower() for e in conf.get("accessi", []) if "@" in e})
     if not (TOKEN and CONTO and dominio and email):
-        print("Access: mancano chiavi Cloudflare, dominio o email, salto.")
+        avviso("Access: mancano chiavi Cloudflare, dominio o email, salto.")
         return
 
     # accesso con codice via email (One-time PIN)
@@ -32,7 +32,7 @@ def main():
     if idp:
         idp_id = idp[0]["id"]
     else:
-        print("Access: attivo l'accesso con codice via email")
+        avviso("Access: attivo l'accesso con codice via email")
         idp_id = cf("POST", f"/accounts/{CONTO}/access/identity_providers",
                     {"name": NOME_IDP, "type": "onetimepin", "config": {}})["result"]["id"]
 
@@ -48,7 +48,7 @@ def main():
         aid = esistenti[0]["id"]
         cf("PUT", f"/accounts/{CONTO}/access/apps/{aid}", app)
     else:
-        print("Access: creo l'applicazione Ludoteca")
+        avviso("Access: creo l'applicazione Ludoteca")
         aid = cf("POST", f"/accounts/{CONTO}/access/apps", app)["result"]["id"]
 
     politiche = cf("GET", f"/accounts/{CONTO}/access/apps/{aid}/policies")["result"]
@@ -58,7 +58,7 @@ def main():
             cf("DELETE", f"/accounts/{CONTO}/access/apps/{aid}/policies/{p['id']}")
     else:
         cf("POST", f"/accounts/{CONTO}/access/apps/{aid}/policies", criterio)
-    print(f"Access: {dominio} e *.{dominio} aperti a {len(email)} email")
+    avviso(f"Access: {dominio} e *.{dominio} aperti a {len(email)} email")
 
 
 if __name__ == "__main__":
