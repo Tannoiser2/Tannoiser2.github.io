@@ -1,5 +1,7 @@
 {
   "_nota": "Ludoteca privata su Cloudflare. dominio: il dominio comprato su Cloudflare (la ludoteca sta su dominio, ogni gioco su <repository in minuscolo>.dominio). accessi: le email che possono entrare; per aggiungere un amico basta scriverla qui.",
-  "dominio": "",
-  "accessi": ["tannoiser2@gmail.com"]
+  "dominio": "ludoteca-digitale.com",
+  "accessi": [
+    "tannoiser2@gmail.com"
+  ]
 }
