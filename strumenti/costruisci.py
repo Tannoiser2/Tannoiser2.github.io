@@ -66,18 +66,32 @@ def misure_webp(dati):
     return None
 
 
-def repository():
+def _elenco(modello):
     tutti, pagina = [], 1
     while True:
-        if PRIVATI:  # anche i privati: serve il token del proprietario
-            url = f"https://api.github.com/user/repos?affiliation=owner&visibility=all&per_page=100&page={pagina}"
-        else:
-            url = f"https://api.github.com/users/{UTENTE}/repos?per_page=100&page={pagina}"
-        dati = json.loads(scarica(url, api=True))
+        dati = json.loads(scarica(modello.format(pagina=pagina), api=True))
         if not dati:
             return tutti
         tutti += dati
         pagina += 1
+
+
+def repository():
+    # i repository pubblici ci sono sempre
+    tutti = _elenco(f"https://api.github.com/users/{UTENTE}/repos?per_page=100&page={{pagina}}")
+    if PRIVATI:
+        # anche i privati: servono al token del proprietario. Se il token vede solo alcuni repository
+        # (token a grana fine con «Only select repositories»), i pubblici restano comunque in elenco.
+        visti = {r["name"] for r in tutti}
+        try:
+            for r in _elenco("https://api.github.com/user/repos?affiliation=owner&visibility=all&per_page=100&page={pagina}"):
+                if r["name"] not in visti:
+                    tutti.append(r)
+                    visti.add(r["name"])
+        except Exception:
+            print("!! elenco dei repository privati non disponibile: uso solo i pubblici")
+            traceback.print_exc()
+    return tutti
 
 
 def generi_predefiniti():
