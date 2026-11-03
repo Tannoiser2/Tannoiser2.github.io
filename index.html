@@ -104,6 +104,20 @@ h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:26px;margin:34px
 .btn.play:hover{filter:brightness(1.06)}
 .btn.code:hover{background:var(--local-bg)}
 .hidden{display:none}
+/* vista a muro: solo le copertine, fitte, come una parete di scatole */
+.wall-link{display:none}
+body.wall .grid{columns:150px;column-gap:8px}
+body.wall .grid .card{margin-bottom:8px;border-radius:6px;border:0;box-shadow:0 1px 3px rgba(0,0,0,.25);position:relative}
+body.wall .body,body.wall .tag{display:none}
+body.wall .cover:not(.nat){aspect-ratio:3/4}
+body.wall .wall-link{display:block;position:absolute;inset:0;z-index:2;text-decoration:none;color:#fff;border-radius:6px}
+body.wall .wall-link .cap{position:absolute;left:0;right:0;bottom:0;padding:22px 8px 7px;font-size:12px;font-weight:600;line-height:1.25;
+  background:linear-gradient(to top,rgba(0,0,0,.82),rgba(0,0,0,0));opacity:0;transition:opacity .2s}
+body.wall .wall-link:hover .cap,body.wall .wall-link:focus-visible .cap{opacity:1}
+body.wall .wall-link:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+body.wall .wall-link .dot{position:absolute;top:6px;left:6px;width:10px;height:10px;border-radius:50%;background:var(--online);box-shadow:0 0 0 2px rgba(255,255,255,.85)}
+body.wall .cover:not(.nat)::after{content:attr(data-t);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:10px;text-align:center;font-family:Fraunces,Georgia,serif;font-weight:600;font-size:15px;color:var(--ink)}
+@media (hover:none){body.wall .wall-link .cap{opacity:1;font-size:11px;padding-top:16px}}
 footer{margin:56px 0 0;padding:24px 0 40px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
 footer p{margin:0 0 6px;max-width:760px}
 </style>
@@ -129,6 +143,7 @@ footer p{margin:0 0 6px;max-width:760px}
   </div>
   <div class="view" role="group" aria-label="Vista">
     <button type="button" data-v="grid" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/><rect x="14" y="15" width="7" height="6" rx="1.5"/></svg>Copertine</button>
+    <button type="button" data-v="wall" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="9.5" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><rect x="16" y="9.5" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="9.5" y="16" width="5" height="5" rx="1"/><rect x="16" y="16" width="5" height="5" rx="1"/></svg>Muro</button>
     <button type="button" data-v="list" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="5" height="6" rx="1"/><path d="M11 6h10M11 9h6"/><rect x="3" y="14" width="5" height="6" rx="1"/><path d="M11 16h10M11 19h6"/></svg>Elenco</button>
   </div>
   <div class="genres" id="genres" role="group" aria-label="Filtra per genere"></div>
@@ -181,7 +196,8 @@ function card(g){
   el.dataset.mode = g.online ? "online" : "local";
   el.dataset.genres = JSON.stringify(g.generi || []);
   el.innerHTML = `
-    <div class="cover${g.img ? " nat" : ""}">
+    <a class="wall-link" href="${esc(g.gioca)}" title="${esc(g.titolo)}" aria-label="Gioca a ${esc(g.titolo)}">${g.online ? '<span class="dot"></span>' : ''}<span class="cap">${esc(g.titolo)}</span></a>
+    <div class="cover${g.img ? " nat" : ""}" data-t="${esc(g.titolo)}">
       ${g.img ? `<img src="${esc(g.img)}" alt="" loading="lazy"${g.w && g.h ? ` width="${g.w}" height="${g.h}"` : ""}>` : ""}
       <span class="tag ${g.online ? "on" : "off"}">${g.online ? ICON_ON + "Online" : ICON_OFF + "Su un dispositivo"}</span>
     </div>
@@ -222,10 +238,11 @@ buttons.forEach(b => b.addEventListener("click", () => apply(b.dataset.f)));
 let saved = "all", savedGen = "";
 try { saved = localStorage.getItem("ludoteca-filtro") || "all"; savedGen = localStorage.getItem("ludoteca-genere") || ""; } catch (e) {}
 
-// vista a copertine o a elenco (ricordata nel browser)
+// vista a copertine, a muro o a elenco (ricordata nel browser)
 const vbtn = document.querySelectorAll(".view button");
 function setView(v){
   document.body.classList.toggle("list", v === "list");
+  document.body.classList.toggle("wall", v === "wall");
   vbtn.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === v)));
   try { localStorage.setItem("ludoteca-vista", v); } catch (e) {}
 }
