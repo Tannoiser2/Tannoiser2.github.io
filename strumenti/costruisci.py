@@ -274,6 +274,9 @@ def scheda(r, out):
             img = f"img/{nome}.webp"
             with open(os.path.join(out, img), "wb") as f:
                 f.write(cop)
+            # impronta del contenuto nell'indirizzo: se la copertina cambia, il browser la riscarica
+            import hashlib
+            img += "?v=" + hashlib.sha1(cop).hexdigest()[:10]
         try:
             bid = int(s.get("bgg") or BGG_ID.get(nome) or 0)
         except (TypeError, ValueError):
