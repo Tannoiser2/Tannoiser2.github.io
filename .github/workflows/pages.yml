@@ -45,6 +45,17 @@ jobs:
         run: |
           export LUDOTECA_DOMINIO=$(python3 -c "import json;print(json.load(open('cloudflare.json')).get('dominio',''))")
           python3 strumenti/pubblica_cloudflare.py _site ludoteca @
+      # Pulizia notturna del database dei giochi online: stanze più vecchie di 30 giorni.
+      # Serve il segreto FIREBASE_SERVICE_ACCOUNT; senza non fa nulla. Un errore qui non ferma la pubblicazione.
+      - name: Pulizia delle stanze online vecchie (Firebase)
+        continue-on-error: true
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          PULIZIA_GIORNI: "30"
+          PULIZIA_PROVA: "1"
+        run: |
+          pip install --quiet google-auth requests
+          python3 strumenti/pulizia_firebase.py
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

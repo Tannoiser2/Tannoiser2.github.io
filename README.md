@@ -96,3 +96,10 @@ Solo un gioco con una struttura diversa (altri campi nella stanza, altri rami) h
 Prima di caricare regole cambiate si possono provare con `node firebase/prove.mjs firebase/database.rules.json nuova`
 (un gioco nuovo con le tre strutture) e `... controllo` (le sezioni esistenti): un piccolo valutatore delle regole
 (`firebase/valuta.mjs`) rifà le scritture vere delle librerie online.
+
+## Pulizia delle stanze online
+
+Ogni notte la costruzione della ludoteca cancella dal database le stanze online create da più di 30 giorni
+(`strumenti/pulizia_firebase.py`), in tutti i giochi: `<gioco>/rooms`, `<gioco>/stanze` e la radice storica `rooms`.
+Campagne, partite e salvataggi non vengono toccati. Serve il segreto `FIREBASE_SERVICE_ACCOUNT` (la chiave di servizio
+di Firebase, in JSON). `PULIZIA_GIORNI` nel workflow cambia il periodo; con `PULIZIA_PROVA: "1"` elenca soltanto.
