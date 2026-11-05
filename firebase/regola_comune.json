@@ -1,0 +1,95 @@
+{
+  "rooms": {
+    "$code": {
+      ".read": "auth != null",
+      ".write": "auth != null && data.child('host').val() === auth.uid && !newData.exists()",
+      ".validate": "$code.length === 4",
+      "host": {
+        ".write": "auth != null && !data.exists() && newData.val() === auth.uid"
+      },
+      "created": {
+        ".write": "auth != null && !data.exists()"
+      },
+      "status": {
+        ".write": "auth != null && newData.parent().child('host').val() === auth.uid",
+        ".validate": "newData.isString() && newData.val().length <= 12"
+      },
+      "open": {
+        ".write": "auth != null && newData.parent().child('host').val() === auth.uid"
+      },
+      "cfg": {
+        ".write": "auth != null && newData.parent().child('host').val() === auth.uid",
+        ".validate": "newData.isString() && newData.val().length <= 4000"
+      },
+      "game": {
+        ".write": "auth != null && newData.parent().child('host').val() === auth.uid",
+        ".validate": "!newData.isString() || newData.val().length <= 20000"
+      },
+      "labels": {
+        ".write": "auth != null && newData.parent().child('host').val() === auth.uid"
+      },
+      "members": {
+        "$uid": {
+          ".write": "auth != null && $uid === auth.uid",
+          ".validate": "newData.isBoolean()"
+        }
+      },
+      "seats": {
+        "$i": {
+          ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid) || data.child('uid').val() === auth.uid || data.child('away').val() === true || root.child($game + '/rooms/' + $code + '/host').val() === auth.uid || newData.parent().parent().child('host').val() === auth.uid)",
+          ".validate": "newData.hasChildren(['uid', 'name']) && newData.child('name').isString() && newData.child('name').val().length <= 24"
+        }
+      },
+      "acts": {
+        "$n": {
+          ".write": "auth != null && !data.exists() && newData.exists() && (root.child($game + '/rooms/' + $code + '/seats/' + newData.child('s').val() + '/uid').val() === auth.uid || root.child($game + '/rooms/' + $code + '/host').val() === auth.uid)",
+          ".validate": "newData.hasChild('s') && (!newData.hasChild('k') || (newData.child('k').isString() && newData.child('k').val().length <= 12)) && (!newData.child('v').isString() || newData.child('v').val().length <= 60000)"
+        }
+      },
+      "log": {
+        "$n": {
+          ".write": "auth != null && !data.exists() && newData.exists() && (root.child($game + '/rooms/' + $code + '/members/' + auth.uid).exists() || root.child($game + '/rooms/' + $code + '/host').val() === auth.uid)",
+          ".validate": "newData.hasChildren(['d']) && newData.child('d').isString() && newData.child('d').val().length <= 8000"
+        }
+      },
+      "turns": {
+        "$r": {
+          "$t": {
+            ".write": "auth != null && !data.exists() && (root.child($game + '/rooms/' + $code + '/seats/' + $t + '/uid').val() === auth.uid || root.child($game + '/rooms/' + $code + '/host').val() === auth.uid)"
+          }
+        }
+      },
+      "plans": {
+        "$r": {
+          "$t": {
+            ".write": "auth != null && !data.exists() && (root.child($game + '/rooms/' + $code + '/seats/' + $t + '/uid').val() === auth.uid || root.child($game + '/rooms/' + $code + '/host').val() === auth.uid)"
+          }
+        }
+      },
+      "$other": {
+        ".validate": false
+      }
+    }
+  },
+  "salvataggi": {
+    "$uid": {
+      ".read": "auth != null && $uid === auth.uid",
+      ".write": "auth != null && $uid === auth.uid",
+      ".validate": "newData.hasChildren(['stato']) && newData.child('stato').isString() && newData.child('stato').val().length <= 1500000"
+    }
+  },
+  "campagne": {
+    "$codice": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".validate": "$codice.length === 6 && ((newData.child('json').isString() && newData.child('json').val().length < 5000000) || (newData.child('dati').isString() && newData.child('dati').val().length < 5000000))"
+    }
+  },
+  "partite": {
+    "$codice": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".validate": "$codice.length === 6 && ((newData.child('json').isString() && newData.child('json').val().length < 5000000) || (newData.child('dati').isString() && newData.child('dati').val().length < 5000000))"
+    }
+  }
+}

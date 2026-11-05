@@ -74,3 +74,25 @@ email, riceve un codice e entra solo se la sua email è nell'elenco `accessi` di
   sottodomini; `strumenti/pubblica_cloudflare.py` pubblica un sito su Cloudflare Pages e non lo mette online sul
   dominio se la protezione non c'è ancora.
 - Un gioco con il repository privato si apre da `https://<repository in minuscolo>.<dominio>/`.
+
+## Gioco online: regole di Firebase
+
+Le regole del database (progetto `flammerouge-f8669`) stanno in `firebase/database.rules.json`, con un titolo per ogni
+gioco: è il file da incollare in Firebase → Realtime Database → Regole.
+
+**Un gioco nuovo non ha bisogno di una sezione propria** se usa una di queste strutture, coperte dalla regola comune
+(`$game`, in fondo al file); la radice è il nome del gioco in minuscolo, senza spazi:
+
+| Struttura | Percorsi | Esempi |
+|---|---|---|
+| Stanze con mosse | `<gioco>/rooms/<CODICE di 4>`: `host`, `created`, `status`, `open`, `cfg`, `game`, `seats/<n>` (`uid`, `name`), `acts/<n>` (`s` + facoltativi `k` fino a 12 caratteri e `v`) | Village, Titans, Paleo |
+| Stanze con registro | come sopra, più `members/<uid>: true` e `log/<n>` (`d`) | Arcs, Hegemony, Il Duello |
+| Turni simultanei | `turns/<round>/<posto>` e `plans/<round>/<posto>` | HEAT |
+| Salvataggi personali | `<gioco>/salvataggi/<uid>`: `stato` (testo) | Arcs, Barbarian Kings |
+| Campagne e partite | `<gioco>/campagne/<CODICE di 6>` o `partite/<CODICE di 6>`, con `json` o `dati` (testo) | ISS Vanguard, Omaha Beach |
+
+Solo un gioco con una struttura diversa (altri campi nella stanza, altri rami) ha bisogno di una sezione sua.
+
+Prima di caricare regole cambiate si possono provare con `node firebase/prove.mjs firebase/database.rules.json nuova`
+(un gioco nuovo con le tre strutture) e `... controllo` (le sezioni esistenti): un piccolo valutatore delle regole
+(`firebase/valuta.mjs`) rifà le scritture vere delle librerie online.
