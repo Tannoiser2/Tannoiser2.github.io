@@ -103,3 +103,11 @@ Ogni notte la costruzione della ludoteca cancella dal database le stanze online 
 (`strumenti/pulizia_firebase.py`), in tutti i giochi: `<gioco>/rooms`, `<gioco>/stanze` e la radice storica `rooms`.
 Campagne, partite e salvataggi non vengono toccati. Serve il segreto `FIREBASE_SERVICE_ACCOUNT` (la chiave di servizio
 di Firebase, in JSON). `PULIZIA_GIORNI` nel workflow cambia il periodo; con `PULIZIA_PROVA: "1"` elenca soltanto.
+
+## La pagina della ludoteca
+
+In alto c'è una barra fissa con la **ricerca** (titolo, autore, genere; il tasto `/` ci porta il cursore), i filtri
+per **modo** (online o su un dispositivo), **genere** e **numero di giocatori** (dai dati BGG: i giochi senza
+dati restano sempre visibili) e l'**ordinamento** (ordine della ludoteca, aggiunti di recente, titolo, voto BGG,
+peso, anno). Sotto, la fila **Aggiunti di recente** con gli ultimi otto giochi, dalla data di creazione del
+repository (campo `aggiunto` di `giochi.json`). Filtri, ordinamento e vista restano salvati nel browser.

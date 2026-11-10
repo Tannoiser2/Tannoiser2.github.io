@@ -31,25 +31,15 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif}
 a{color:inherit}
 .wrap{max-width:1180px;margin:0 auto;padding:0 16px}
-header{padding:56px 0 28px;border-bottom:1px solid var(--line)}
+header{padding:34px 0 20px;border-bottom:1px solid var(--line)}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .kicker{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 10px}
-h1{font-family:Fraunces,Georgia,serif;font-weight:800;font-size:clamp(36px,6vw,64px);line-height:1.02;margin:0 0 14px;letter-spacing:-.01em}
-.lede{max-width:640px;color:var(--muted);font-size:18px;margin:0}
-.stats{display:flex;gap:28px;margin-top:26px;flex-wrap:wrap}
-.stat b{display:block;font-family:Fraunces,Georgia,serif;font-size:32px;line-height:1}
+h1{font-family:Fraunces,Georgia,serif;font-weight:800;font-size:clamp(32px,5vw,52px);line-height:1.02;margin:0 0 10px;letter-spacing:-.01em}
+.lede{max-width:620px;color:var(--muted);font-size:16px;margin:0}
+.stats{display:flex;gap:26px;flex-wrap:wrap}
+.stat b{display:block;font-family:Fraunces,Georgia,serif;font-size:28px;line-height:1}
 .stat span{font-size:13px;color:var(--muted)}
-.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:22px 0 8px}
-.filters{display:flex;gap:6px;flex-wrap:wrap}
-.filters button{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:8px 14px;border-radius:999px;cursor:pointer}
-.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.filters button:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.legend{font-size:13px;color:var(--muted)}
-.genres{display:flex;gap:6px;flex-wrap:wrap;padding:4px 0 6px}
-.genres:empty{display:none}
-.genres button{font:inherit;font-size:13px;font-weight:500;border:1px dashed var(--line);background:transparent;color:var(--muted);padding:6px 12px;border-radius:999px;cursor:pointer}
-.genres button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent)}
-.genres button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.genres .lbl{font-size:13px;color:var(--muted);align-self:center;margin-right:4px}
+.btn:focus-visible,.view button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .gtags{display:flex;gap:4px;flex-wrap:wrap;margin:0}
 .gtags span{font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--muted);background:var(--local-bg);padding:2px 8px;border-radius:999px}
 .empty{color:var(--muted);padding:20px 0}
@@ -77,7 +67,7 @@ body.list .mode{font-size:12px;font-weight:600;color:var(--online)}
 body:not(.list) .mode{display:none}
 .bggnote{font-size:12px;opacity:.8}
 .btn.bgg:hover{background:var(--local-bg)}
-h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:26px;margin:34px 0 4px}
+h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:26px;margin:30px 0 4px}
 .sub{color:var(--muted);margin:0 0 18px;font-size:15px}
 /* Copertine nelle proporzioni originali (quadrate, verticali o orizzontali): niente tagli né bande.
    Le schede si dispongono a colonne, come una bacheca. */
@@ -103,7 +93,35 @@ h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:26px;margin:34px
 .btn.code{flex:0 0 auto;background:transparent}
 .btn.play:hover{filter:brightness(1.06)}
 .btn.code:hover{background:var(--local-bg)}
-.hidden{display:none}
+.hidden{display:none!important}
+/* barra degli strumenti: resta in alto mentre si scorre */
+.tools{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 0}
+.tools .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+@media (max-width:700px){.tools{position:static;backdrop-filter:none;-webkit-backdrop-filter:none}.tools select{flex:1 1 140px}}
+.search{flex:1 1 240px;position:relative;min-width:200px}
+.search svg{position:absolute;left:12px;top:50%;width:16px;height:16px;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.search input{width:100%;font:inherit;font-size:15px;padding:9px 12px 9px 36px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink)}
+.search input:focus,.tools select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.tools select{font:inherit;font-size:14px;padding:8px 30px 8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);
+  appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;background-size:5px 5px;background-repeat:no-repeat;max-width:100%}
+.tools select.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tools .row2{margin-top:8px;justify-content:space-between}
+.count{font-size:13px;color:var(--muted)}
+.count button{font:inherit;font-size:13px;background:none;border:0;color:var(--accent);cursor:pointer;padding:0 0 0 8px;text-decoration:underline}
+/* novità: una fila che scorre di lato */
+.novita{margin:22px 0 6px}
+.novita h2{margin:0 0 10px;font-size:22px}
+.strip{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 12px;scroll-snap-type:x proximity}
+.strip a{flex:0 0 132px;scroll-snap-align:start;text-decoration:none;color:var(--ink)}
+.strip .ph{width:132px;height:176px;border-radius:8px;overflow:hidden;background:var(--local-bg);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center}
+.strip img{width:100%;height:100%;object-fit:cover;display:block}
+.strip .t{font-size:13px;font-weight:600;line-height:1.25;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.strip .d{font-size:11.5px;color:var(--muted)}
+h2 .n{font-family:Inter,system-ui,sans-serif;font-size:14px;font-weight:500;color:var(--muted);margin-left:6px}
+/* nelle copertine la descrizione è corta: quella intera è nell'elenco */
+body:not(.list) .desc{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+mark{background:color-mix(in srgb,var(--accent) 22%,transparent);color:inherit;border-radius:3px;padding:0 1px}
 /* vista a muro: solo le copertine, fitte, come una parete di scatole */
 .wall-link{display:none}
 body.wall .grid{columns:150px;column-gap:8px}
@@ -124,39 +142,59 @@ footer p{margin:0 0 6px;max-width:760px}
 </head>
 <body>
 <header>
-  <div class="wrap">
-    <p class="kicker">Giochi da tavolo · versioni digitali</p>
-    <h1>La ludoteca digitale</h1>
-    <p class="lede">I giochi da tavolo che ho convertito in digitale. Si aprono direttamente nel browser, senza installare niente; quelli con il bollino verde si giocano anche online con gli amici, entrando con il codice della stanza.</p>
+  <div class="wrap head">
+    <div>
+      <p class="kicker">Giochi da tavolo · versioni digitali</p>
+      <h1>La ludoteca digitale</h1>
+      <p class="lede">I giochi da tavolo che ho convertito in digitale. Si aprono nel browser, senza installare niente; quelli con il bollino verde si giocano anche online con gli amici, con il codice della stanza.</p>
+    </div>
     <div class="stats" id="stats"></div>
   </div>
 </header>
 
-<main class="wrap">
-  <div class="bar">
-    <div class="filters" role="group" aria-label="Filtra i giochi">
-      <button type="button" data-f="all" aria-pressed="true">Tutti</button>
-      <button type="button" data-f="online" aria-pressed="false">Online con gli amici</button>
-      <button type="button" data-f="local" aria-pressed="false">Su un dispositivo</button>
+<div class="tools">
+  <div class="wrap">
+    <div class="row">
+      <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input id="q" type="search" placeholder="Cerca un gioco, un autore, un genere" aria-label="Cerca" autocomplete="off"></label>
+      <select id="modo" aria-label="Come si gioca">
+        <option value="all">Tutti i modi</option><option value="online">Online con gli amici</option><option value="local">Su un dispositivo</option>
+      </select>
+      <select id="genere" aria-label="Genere"><option value="">Tutti i generi</option></select>
+      <select id="gioc" aria-label="Numero di giocatori">
+        <option value="">Giocatori: tutti</option><option value="1">In solitario</option><option value="2">In 2</option><option value="3">In 3</option><option value="4">In 4</option><option value="5">In 5 o più</option>
+      </select>
+      <select id="ordina" aria-label="Ordina">
+        <option value="ordine">Ordine della ludoteca</option><option value="recenti">Aggiunti di recente</option><option value="titolo">Titolo A–Z</option>
+        <option value="voto">Voto BGG</option><option value="leggeri">Dal più leggero</option><option value="pesanti">Dal più impegnativo</option><option value="anno">Dal più vecchio</option>
+      </select>
     </div>
-    <span class="legend">Online: stanza con codice di 4 lettere · Su un dispositivo: contro l'IA o passandosi il dispositivo</span>
+    <div class="row row2">
+      <span class="count" id="count"></span>
+      <div class="view" role="group" aria-label="Vista">
+        <button type="button" data-v="grid" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/><rect x="14" y="15" width="7" height="6" rx="1.5"/></svg>Copertine</button>
+        <button type="button" data-v="wall" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="9.5" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><rect x="16" y="9.5" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="9.5" y="16" width="5" height="5" rx="1"/><rect x="16" y="16" width="5" height="5" rx="1"/></svg>Muro</button>
+        <button type="button" data-v="list" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="5" height="6" rx="1"/><path d="M11 6h10M11 9h6"/><rect x="3" y="14" width="5" height="6" rx="1"/><path d="M11 16h10M11 19h6"/></svg>Elenco</button>
+      </div>
+    </div>
   </div>
-  <div class="view" role="group" aria-label="Vista">
-    <button type="button" data-v="grid" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/><rect x="14" y="15" width="7" height="6" rx="1.5"/></svg>Copertine</button>
-    <button type="button" data-v="wall" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="9.5" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><rect x="16" y="9.5" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="9.5" y="16" width="5" height="5" rx="1"/><rect x="16" y="16" width="5" height="5" rx="1"/></svg>Muro</button>
-    <button type="button" data-v="list" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="5" height="6" rx="1"/><path d="M11 6h10M11 9h6"/><rect x="3" y="14" width="5" height="6" rx="1"/><path d="M11 16h10M11 19h6"/></svg>Elenco</button>
-  </div>
-  <div class="genres" id="genres" role="group" aria-label="Filtra per genere"></div>
+</div>
+
+<main class="wrap">
+  <section class="novita" id="novita" aria-labelledby="nov-t">
+    <h2 id="nov-t">Aggiunti di recente</h2>
+    <div class="strip" id="strip"></div>
+  </section>
   <p class="empty hidden" id="empty">Nessun gioco con questi filtri.</p>
 
-  <section>
-    <h2>Conversioni</h2>
+  <section class="sez">
+    <h2>Conversioni<span class="n" id="n-conv"></span></h2>
     <p class="sub">Adattamenti di giochi pubblicati, per uso personale.</p>
     <div class="grid" id="conv"></div>
   </section>
 
-  <section>
-    <h2>Giochi originali</h2>
+  <section class="sez">
+    <h2>Giochi originali<span class="n" id="n-orig"></span></h2>
     <p class="sub">Progetti miei, ancora in sviluppo.</p>
     <div class="grid" id="orig"></div>
   </section>
@@ -186,7 +224,7 @@ function facts(b){
   const parts = [`<span><b>${pl}</b> giocatori</span>`];
   if (t) parts.push(`<span><b>${t}</b></span>`);
   if (b.peso) parts.push(`<span title="Complessità su BGG (1–5)">peso <b>${num(b.peso.toFixed(1))}</b>/5</span>`);
-  if (b.voto) parts.push(`<span title="Voto medio su BGG${b.classifica ? " · " + b.classifica + "° in classifica" : ""}">★ <b>${num(b.voto.toFixed(1))}</b></span>`);
+  if (b.voto) parts.push(`<span title="Voto medio su BGG${b.classifica ? " · " + b.classifica + "° in classifica" : ""}">voto <b>${num(b.voto.toFixed(1))}</b></span>`);
   const by = (b.autori || []).length ? `<p class="by">${esc(b.autori.join(", "))}${b.anno ? " · " + b.anno : ""}</p>` : "";
   return `<p class="facts">${parts.join("")}</p>${by}`;
 }
@@ -217,26 +255,61 @@ function card(g){
   return el;
 }
 const conv = document.getElementById("conv"), orig = document.getElementById("orig");
-const buttons = document.querySelectorAll(".filters button");
-let mode = "all", genre = "";
-function apply(f, gen){
-  if (f !== undefined) mode = f;
-  if (gen !== undefined) genre = gen;
-  buttons.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.f === mode)));
-  document.querySelectorAll("#genres button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.g === genre)));
-  document.querySelectorAll(".card").forEach(c => {
-    const okMode = mode === "all" || c.dataset.mode === mode;
-    const okGen = !genre || JSON.parse(c.dataset.genres || "[]").includes(genre);
-    c.classList.toggle("hidden", !(okMode && okGen));
-  });
-  let any = false;
-  document.querySelectorAll("section").forEach(s => { const v = !!s.querySelector(".card:not(.hidden)"); any = any || v; s.classList.toggle("hidden", !v); });
-  document.getElementById("empty").classList.toggle("hidden", any);
-  try { localStorage.setItem("ludoteca-filtro", mode); localStorage.setItem("ludoteca-genere", genre); } catch (e) {}
+const $ = id => document.getElementById(id);
+const norm = t => String(t ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+let tutti = [], schede = new Map();
+const stato = {q: "", modo: "all", genere: "", gioc: "", ordina: "ordine"};
+const salva = () => { try { localStorage.setItem("ludoteca-stato", JSON.stringify({...stato, q: ""})); } catch (e) {} };
+
+function adatto(g){
+  if (stato.modo === "online" && !g.online) return false;
+  if (stato.modo === "local" && g.online) return false;
+  if (stato.genere && !(g.generi || []).includes(stato.genere)) return false;
+  if (stato.gioc && g.bgg && g.bgg.max) {           // senza dati BGG il gioco resta visibile
+    const n = +stato.gioc;
+    if (n === 5 ? g.bgg.max < 5 : (g.bgg.min > n || g.bgg.max < n)) return false;
+  }
+  if (stato.q) {
+    const testo = norm([g.titolo, g.sottotitolo, g.repo, (g.generi || []).join(" "), g.bgg && (g.bgg.autori || []).join(" "), g.bgg && g.bgg.nome].join(" "));
+    if (!norm(stato.q).split(/\s+/).filter(Boolean).every(p => testo.includes(p))) return false;
+  }
+  return true;
 }
-buttons.forEach(b => b.addEventListener("click", () => apply(b.dataset.f)));
-let saved = "all", savedGen = "";
-try { saved = localStorage.getItem("ludoteca-filtro") || "all"; savedGen = localStorage.getItem("ludoteca-genere") || ""; } catch (e) {}
+const ORD = {
+  ordine: (a, b) => (a.ordine ?? 999) - (b.ordine ?? 999) || a.titolo.localeCompare(b.titolo, "it"),
+  titolo: (a, b) => a.titolo.localeCompare(b.titolo, "it"),
+  recenti: (a, b) => String(b.aggiunto || "").localeCompare(String(a.aggiunto || "")) || a.titolo.localeCompare(b.titolo, "it"),
+  voto: (a, b) => ((b.bgg && b.bgg.voto) || 0) - ((a.bgg && a.bgg.voto) || 0),
+  leggeri: (a, b) => ((a.bgg && a.bgg.peso) || 9) - ((b.bgg && b.bgg.peso) || 9),
+  pesanti: (a, b) => ((b.bgg && b.bgg.peso) || 0) - ((a.bgg && a.bgg.peso) || 0),
+  anno: (a, b) => ((a.bgg && a.bgg.anno) || 9999) - ((b.bgg && b.bgg.anno) || 9999),
+};
+function mostra(){
+  ["modo", "genere", "gioc", "ordina"].forEach(k => { $(k).value = stato[k]; $(k).classList.toggle("on", k !== "ordina" && !!stato[k] && stato[k] !== "all"); });
+  const vis = tutti.filter(adatto).sort(ORD[stato.ordina] || ORD.ordine);
+  [conv, orig].forEach(box => box.textContent = "");
+  vis.forEach(g => (g.sezione === "originale" ? orig : conv).appendChild(schede.get(g.repo)));
+  tutti.forEach(g => { if (!vis.includes(g)) schede.get(g.repo).remove(); });
+  const nc = vis.filter(g => g.sezione !== "originale").length, no = vis.length - nc;
+  $("n-conv").textContent = nc; $("n-orig").textContent = no;
+  conv.closest("section").classList.toggle("hidden", !nc);
+  orig.closest("section").classList.toggle("hidden", !no);
+  $("empty").classList.toggle("hidden", vis.length > 0);
+  const filtri = stato.q || stato.modo !== "all" || stato.genere || stato.gioc;
+  $("count").innerHTML = filtri
+    ? `${vis.length} giochi su ${tutti.length}<button type="button" id="azzera">Azzera i filtri</button>`
+    : `${tutti.length} giochi`;
+  if (filtri) $("azzera").onclick = () => { Object.assign(stato, {q: "", modo: "all", genere: "", gioc: ""}); $("q").value = ""; mostra(); };
+  $("novita").classList.toggle("hidden", !!filtri || stato.ordina === "recenti" || !$("strip").children.length);
+  salva();
+}
+let attesa;
+$("q").addEventListener("input", e => { clearTimeout(attesa); attesa = setTimeout(() => { stato.q = e.target.value.trim(); mostra(); }, 120); });
+["modo", "genere", "gioc", "ordina"].forEach(k => $(k).addEventListener("change", e => { stato[k] = e.target.value; mostra(); }));
+document.addEventListener("keydown", e => {   // «/» porta alla ricerca
+  if (e.key === "/" && document.activeElement.tagName !== "INPUT") { e.preventDefault(); $("q").focus(); }
+});
+try { Object.assign(stato, JSON.parse(localStorage.getItem("ludoteca-stato") || "{}"), {q: ""}); } catch (e) {}
 
 // vista a copertine, a muro o a elenco (ricordata nel browser)
 const vbtn = document.querySelectorAll(".view button");
@@ -249,27 +322,29 @@ function setView(v){
 vbtn.forEach(b => b.addEventListener("click", () => setView(b.dataset.v)));
 try { setView(localStorage.getItem("ludoteca-vista") || "grid"); } catch (e) { setView("grid"); }
 fetch("stato.json", {cache: "no-cache"}).then(r => r.json()).then(st => {
-  const n = document.getElementById("bggnote");
+  const n = $("bggnote");
   n.textContent = `Pagina aggiornata: ${st.costruita}. ` + (st.bgg_giochi ? `Dati BGG per ${st.bgg_giochi} giochi.` : `Dati BGG non disponibili${st.bgg_problema ? ": " + st.bgg_problema : ""}.`);
 }).catch(() => {});
 
+const MESI = ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"];
+const data = d => { const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(d || ""); return m ? `${+m[3]} ${MESI[+m[2] - 1]}` : ""; };
 fetch("giochi.json", {cache: "no-cache"}).then(r => r.json()).then(all => {
-  all.forEach(g => (g.sezione === "originale" ? orig : conv).appendChild(card(g)));
-  document.getElementById("stats").innerHTML =
-    `<div class="stat"><b>${all.length}</b><span>giochi nel browser</span></div>` +
-    `<div class="stat"><b>${all.filter(g=>g.online).length}</b><span>online con gli amici</span></div>` +
-    `<div class="stat"><b>${all.filter(g=>g.sezione==="originale").length}</b><span>giochi originali</span></div>`;
-  // generi presenti, in ordine di frequenza
+  tutti = all;
+  all.forEach(g => schede.set(g.repo, card(g)));
+  $("stats").innerHTML =
+    `<div class="stat"><b>${all.length}</b><span>giochi</span></div>` +
+    `<div class="stat"><b>${all.filter(g=>g.online).length}</b><span>online</span></div>` +
+    `<div class="stat"><b>${all.filter(g=>g.sezione==="originale").length}</b><span>originali</span></div>`;
+  // generi presenti, in ordine di frequenza, nel menu a tendina
   const conta = {};
   all.forEach(g => (g.generi || []).forEach(x => conta[x] = (conta[x] || 0) + 1));
   const nomi = Object.keys(conta).sort((a, b) => conta[b] - conta[a] || a.localeCompare(b, "it"));
-  const gbox = document.getElementById("genres");
-  if (nomi.length) {
-    gbox.innerHTML = '<span class="lbl">Genere:</span><button type="button" data-g="" aria-pressed="true">Tutti</button>' +
-      nomi.map(n => `<button type="button" data-g="${esc(n)}" aria-pressed="false">${esc(n)} <small>${conta[n]}</small></button>`).join("");
-    gbox.querySelectorAll("button").forEach(b => b.addEventListener("click", () => apply(undefined, b.dataset.g === genre ? "" : b.dataset.g)));
-  }
-  apply(["all","online","local"].includes(saved) ? saved : "all", nomi.includes(savedGen) ? savedGen : "");
+  $("genere").insertAdjacentHTML("beforeend", nomi.map(n => `<option value="${esc(n)}">${esc(n)} (${conta[n]})</option>`).join(""));
+  if (!nomi.includes(stato.genere)) stato.genere = "";
+  // le ultime otto aggiunte
+  const nuovi = all.filter(g => g.aggiunto).sort(ORD.recenti).slice(0, 8);
+  $("strip").innerHTML = nuovi.map(g => `<a href="${esc(g.gioca)}" title="Gioca a ${esc(g.titolo)}"><div class="ph">${g.img ? `<img src="${esc(g.img)}" alt="" loading="lazy">` : ""}</div><div class="t">${esc(g.titolo)}</div><div class="d">${data(g.aggiunto)}</div></a>`).join("");
+  mostra();
 }).catch(() => {
   conv.innerHTML = '<p class="sub">Non riesco a caricare l\'elenco dei giochi. Riprova fra poco.</p>';
 });

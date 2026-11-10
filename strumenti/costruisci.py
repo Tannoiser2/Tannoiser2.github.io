@@ -294,6 +294,7 @@ def scheda(r, out):
             "ordine": numero(s.get("ordine")),
             "gioca": s.get("gioca") or indirizzo(nome, r.get("private")),
             "codice": r["html_url"],
+            "aggiunto": (r.get("created_at") or "")[:10],  # quando è nato il repository: per «Aggiunti di recente»
             "img": img,
             "w": misure[0] if misure else 0,
             "h": misure[1] if misure else 0,
