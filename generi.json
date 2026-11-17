@@ -149,5 +149,9 @@
   "Inferno": [
     "Wargame",
     "Storici"
+  ],
+  "Rattus": [
+    "Storici",
+    "Gestionali"
   ]
 }
