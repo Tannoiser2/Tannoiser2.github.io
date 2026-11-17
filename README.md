@@ -127,6 +127,6 @@ di 25 MB al massimo; R2 non ha nessuno dei due limiti (piano gratuito: 10 GB).
 Segreti di questo repository: `CLOUDFLARE_API_TOKEN` (permessi: Account · Cloudflare Pages · Modifica; Account · Workers
 Scripts · Modifica; Account · Workers R2 Storage · Modifica; Account · Access: app e criteri · Modifica; Account · Access:
 organizzazioni, provider di identità e gruppi · Modifica; Zona · DNS · Modifica; Zona · Workers Routes · Modifica),
-`CLOUDFLARE_ACCOUNT_ID` e `LUDOTECA_TOKEN` (GitHub, tutti i repository: Contents e Actions in sola lettura).
+`CLOUDFLARE_ACCOUNT_ID` e `LUDOTECA_TOKEN` (GitHub, tutti i repository: Contents in lettura, Actions in lettura e scrittura: serve a far ricostruire i giochi il cui pacchetto è scaduto).
 Nella copia privata della ludoteca il pulsante Gioca porta alla versione su Cloudflare di ogni gioco già pubblicato
 (`strumenti/indirizzi_cloudflare.py`).

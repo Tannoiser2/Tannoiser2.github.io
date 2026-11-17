@@ -11,7 +11,10 @@ giorno). Questo script, che gira nella ludoteca ogni due ore:
 Perché R2 e non un progetto Pages per gioco: il piano gratuito di Pages ha al massimo 100 progetti per account
 e file di 25 MB al massimo; R2 non ha nessuno dei due limiti.
 
-Variabili: LUDOTECA_TOKEN (GitHub, Contents e Actions in sola lettura), CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID.
+Un gioco che non è ancora su R2 e non ha un pacchetto recente viene fatto ricostruire (il suo workflow di
+pubblicazione, avviato a mano): al giro dopo il pacchetto c'è e viene caricato. Al massimo RICOSTRUZIONI per giro.
+
+Variabili: LUDOTECA_TOKEN (GitHub, tutti i repository: Contents in lettura, Actions in lettura e scrittura), CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID.
 MAX_GIOCHI: quanti giochi al massimo per giro (30). Se manca qualcosa non fa nulla.
 """
 import io, json, mimetypes, os, subprocess, sys, tarfile, tempfile, shutil, time, zipfile
@@ -26,6 +29,7 @@ import pubblica_cloudflare as pc  # noqa: E402
 
 GH = os.environ.get("LUDOTECA_TOKEN", "")
 MAX = int(os.environ.get("MAX_GIOCHI") or 30)
+RICOSTRUZIONI = int(os.environ.get("RICOSTRUZIONI") or 20)
 BUCKET = "ludoteca-giochi"
 WORKER = "ludoteca-giochi"
 NON_GIOCHI = {"tannoiser2.github.io", "presenza", "gurps", "smoothieware", "cinebook-ai", "tabelle_materiali", "html_converter"}
@@ -33,12 +37,29 @@ TIPI = {".wasm": "application/wasm", ".pck": "application/octet-stream", ".js": 
         ".html": "text/html; charset=utf-8", ".json": "application/json", ".webp": "image/webp"}
 
 
-def gh(url, raw=False):
+def gh(url, raw=False, dati=None):
     req = urllib.request.Request(url if url.startswith("http") else "https://api.github.com" + url,
+                                 data=json.dumps(dati).encode() if dati is not None else None,
+                                 method="POST" if dati is not None else "GET",
                                  headers={"Authorization": "Bearer " + GH, "Accept": "application/vnd.github+json",
                                           "User-Agent": "ludoteca"})
     with urllib.request.urlopen(req, timeout=300) as r:
-        return r.read() if raw else json.loads(r.read())
+        corpo = r.read()
+        return corpo if raw else (json.loads(corpo) if corpo else None)
+
+
+def ricostruisci(repo):
+    """Avvia il workflow che pubblica il gioco (quello che carica l'artefatto github-pages). True se avviato."""
+    for w in gh(f"/repos/{repo['full_name']}/actions/workflows").get("workflows", []):
+        if w.get("state") != "active":
+            continue
+        testo = gh(f"/repos/{repo['full_name']}/contents/{w['path']}").get("content", "")
+        import base64
+        y = base64.b64decode(testo).decode("utf-8", "replace")
+        if "upload-pages-artifact" in y and "workflow_dispatch" in y:
+            gh(f"/repos/{repo['full_name']}/actions/workflows/{w['id']}/dispatches", dati={"ref": repo.get("default_branch", "main")})
+            return True
+    return False
 
 
 def wrangler(*args):
@@ -151,7 +172,7 @@ def main():
         if len(r) < 100:
             break
         pagina += 1
-    fatti, errori, saltati = [], [], 0
+    fatti, errori, saltati, ricostruiti = [], [], 0, []
     for r in sorted(repos, key=lambda x: x.get("pushed_at") or "", reverse=True):
         nome = r["name"]
         if r.get("fork") or r.get("archived") or nome.lower() in NON_GIOCHI:
@@ -165,6 +186,12 @@ def main():
             continue
         art = next((x for x in a.get("artifacts", []) if not x.get("expired")), None)
         if not art:
+            if slug(nome) not in elenco and a.get("artifacts") and len(ricostruiti) < RICOSTRUZIONI:
+                try:
+                    if ricostruisci(r):
+                        ricostruiti.append(nome)
+                except urllib.error.HTTPError as e:
+                    errori.append(f"{nome}: ricostruzione non avviata (HTTP {e.code}: serve Actions in scrittura nel token)")
             continue
         sha = (art.get("workflow_run") or {}).get("head_sha") or str(art["id"])
         s = slug(nome)
@@ -180,7 +207,8 @@ def main():
         except Exception as e:  # un gioco che non va non ferma gli altri
             errori.append(f"{nome}: {type(e).__name__}: {str(e)[:300]}")
     pc.avviso(f"Giochi su Cloudflare: {len(fatti)} pubblicati ({', '.join(fatti) or 'nessuno'}), "
-              f"{saltati} già aggiornati, {len(elenco)} in tutto.")
+              f"{saltati} già aggiornati, {len(elenco)} in tutto"
+              + (f"; ricostruzione avviata per {', '.join(ricostruiti)} (saranno caricati al prossimo giro)" if ricostruiti else "") + ".")
     for e in errori:
         print("::warning::" + e)
 
