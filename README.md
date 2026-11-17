@@ -111,3 +111,22 @@ per **modo** (online o su un dispositivo), **genere** e **numero di giocatori** 
 dati restano sempre visibili) e l'**ordinamento** (ordine della ludoteca, aggiunti di recente, titolo, voto BGG,
 peso, anno). Sotto, la fila **Aggiunti di recente** con gli ultimi otto giochi, dalla data di creazione del
 repository (campo `aggiunto` di `giochi.json`). Filtri, ordinamento e vista restano salvati nel browser.
+
+## Giochi sulla ludoteca privata (Cloudflare R2 + Worker)
+
+I giochi **non hanno segreti** nei loro repository. Ognuno si costruisce da solo e lascia su GitHub il pacchetto del
+sito (artefatto `github-pages`, tenuto un giorno). Ogni due ore il workflow **Giochi su Cloudflare** di questo
+repository (`strumenti/giochi_r2.py`) prende i pacchetti nuovi e li carica nel contenitore R2 `ludoteca-giochi`
+(`<gioco>/...`, più `elenco.json` con il commit pubblicato di ogni gioco). Il Worker `ludoteca-giochi`
+(`cloudflare/worker.js`, rotta `*.ludoteca-digitale.com/*`) serve ogni gioco da `https://<gioco in minuscolo>.ludoteca-digitale.com/`,
+dietro Cloudflare Access. Si può avviare a mano da Actions → Giochi su Cloudflare → Run workflow.
+
+Perché R2 e non un progetto Pages per gioco: il piano gratuito di Pages ha al massimo 100 progetti per account e file
+di 25 MB al massimo; R2 non ha nessuno dei due limiti (piano gratuito: 10 GB).
+
+Segreti di questo repository: `CLOUDFLARE_API_TOKEN` (permessi: Account · Cloudflare Pages · Modifica; Account · Workers
+Scripts · Modifica; Account · Workers R2 Storage · Modifica; Account · Access: app e criteri · Modifica; Account · Access:
+organizzazioni, provider di identità e gruppi · Modifica; Zona · DNS · Modifica; Zona · Workers Routes · Modifica),
+`CLOUDFLARE_ACCOUNT_ID` e `LUDOTECA_TOKEN` (GitHub, tutti i repository: Contents e Actions in sola lettura).
+Nella copia privata della ludoteca il pulsante Gioca porta alla versione su Cloudflare di ogni gioco già pubblicato
+(`strumenti/indirizzi_cloudflare.py`).

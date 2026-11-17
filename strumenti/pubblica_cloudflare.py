@@ -116,7 +116,7 @@ def dividi_grandi(sito):
     return grandi
 
 
-def main(cartella, progetto, sotto):
+def main(cartella, progetto, sotto, commit=None):
     if not (TOKEN and CONTO and DOMINIO):
         print("Cloudflare: mancano CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID o LUDOTECA_DOMINIO, salto.")
         return
@@ -148,7 +148,7 @@ def main(cartella, progetto, sotto):
     with open(os.path.join(lavoro, "functions", "_middleware.js"), "w") as f:
         f.write(MIDDLEWARE % {"host": json.dumps(host), "grandi": json.dumps(grandi)})
     r = subprocess.run(["npx", "--yes", "wrangler@3", "pages", "deploy", sito, "--project-name", progetto,
-                    "--branch", "main", "--commit-dirty=true"], cwd=lavoro,
+                    "--branch", "main", "--commit-dirty=true"] + (["--commit-hash", commit] if commit else []), cwd=lavoro,
                    env=dict(os.environ, CI="1"), capture_output=True, text=True)
     print(r.stdout[-4000:], r.stderr[-4000:])
     if r.returncode:
