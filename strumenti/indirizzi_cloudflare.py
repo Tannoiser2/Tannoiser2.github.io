@@ -16,13 +16,11 @@ def main(sito, copia):
     shutil.copytree(sito, copia)
     if not (pc.TOKEN and pc.CONTO and pc.DOMINIO):
         return
-    progetti, pagina = set(), 1
-    while True:
-        r = pc.cf("GET", f"/accounts/{pc.CONTO}/pages/projects?per_page=50&page={pagina}")["result"]
-        progetti |= {p["name"] for p in r}
-        if len(r) < 50:
-            break
-        pagina += 1
+    progetti = set()
+    try:
+        progetti = {p["name"] for p in (pc.cf("GET", f"/accounts/{pc.CONTO}/pages/projects")["result"] or [])}
+    except SystemExit as e:  # se Cloudflare non risponde, la ludoteca si pubblica lo stesso con i link a GitHub
+        print("::warning::Elenco dei progetti Pages non disponibile: " + str(e)[:200])
     # più i giochi serviti da R2 (strumenti/giochi_r2.py), che sono in elenco.json
     import subprocess
     r = subprocess.run(["npx", "--yes", "wrangler@3", "r2", "object", "get", "ludoteca-giochi/elenco.json", "--pipe", "--remote"],
