@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   copertina:
@@ -31,4 +32,8 @@ jobs:
           git add copertine
           git diff --cached --quiet || git commit -m "Ludoteca: copertina di ${{ inputs.repo }} da BGG"
           git push
-      # La ludoteca si ripubblica da sola alla prossima costruzione programmata o al prossimo aggiornamento.
+      # un commit del robot di GitHub non fa ripartire gli altri workflow: la ludoteca va avviata a mano
+      - name: Ripubblica la ludoteca
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main -R "${{ github.repository }}"
