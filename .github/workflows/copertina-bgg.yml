@@ -1,0 +1,38 @@
+# Scarica da BoardGameGeek la copertina di un gioco e la aggiunge alla ludoteca (copertine/<repository>.webp).
+name: Copertina da BGG
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: "Repository del gioco (es. Timeless-Journey)"
+        required: true
+      bgg:
+        description: "Codice BGG (facoltativo: altrimenti dalla scheda del gioco)"
+        required: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  copertina:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet pillow
+      - name: Scarica la copertina
+        env:
+          BGG_TOKEN: ${{ secrets.BGG_TOKEN }}
+        run: python3 strumenti/copertina_bgg.py "${{ inputs.repo }}" "${{ inputs.bgg }}"
+      - name: Salva nella ludoteca
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add copertine
+          git diff --cached --quiet || git commit -m "Ludoteca: copertina di ${{ inputs.repo }} da BGG"
+          git push
+      - name: Ripubblica la ludoteca
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main || true
