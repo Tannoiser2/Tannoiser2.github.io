@@ -254,12 +254,18 @@ function card(g){
     </div>`;
   return el;
 }
+// .../conversioni/ (o ?conversioni): la ludoteca senza i giochi originali
+const SOLO_CONV = document.documentElement.dataset.solo === "conversioni" || new URLSearchParams(location.search).has("conversioni");
+if (SOLO_CONV) {
+  document.title = "La ludoteca digitale · conversioni";
+  document.getElementById("orig").closest("section").remove();
+}
 const conv = document.getElementById("conv"), orig = document.getElementById("orig");
 const $ = id => document.getElementById(id);
 const norm = t => String(t ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 let tutti = [], schede = new Map();
 const stato = {q: "", modo: "all", genere: "", gioc: "", ordina: "ordine"};
-const salva = () => { try { localStorage.setItem("ludoteca-stato", JSON.stringify({...stato, q: ""})); } catch (e) {} };
+const salva = () => { try { localStorage.setItem(SOLO_CONV ? "ludoteca-stato-conv" : "ludoteca-stato", JSON.stringify({...stato, q: ""})); } catch (e) {} };
 
 function adatto(g){
   if (stato.modo === "online" && !g.online) return false;
@@ -287,13 +293,13 @@ const ORD = {
 function mostra(){
   ["modo", "genere", "gioc", "ordina"].forEach(k => { $(k).value = stato[k]; $(k).classList.toggle("on", k !== "ordina" && !!stato[k] && stato[k] !== "all"); });
   const vis = tutti.filter(adatto).sort(ORD[stato.ordina] || ORD.ordine);
-  [conv, orig].forEach(box => box.textContent = "");
+  [conv, orig].forEach(box => box && (box.textContent = ""));
   vis.forEach(g => (g.sezione === "originale" ? orig : conv).appendChild(schede.get(g.repo)));
   tutti.forEach(g => { if (!vis.includes(g)) schede.get(g.repo).remove(); });
   const nc = vis.filter(g => g.sezione !== "originale").length, no = vis.length - nc;
-  $("n-conv").textContent = nc; $("n-orig").textContent = no;
+  $("n-conv").textContent = nc;
   conv.closest("section").classList.toggle("hidden", !nc);
-  orig.closest("section").classList.toggle("hidden", !no);
+  if (orig) { $("n-orig").textContent = no; orig.closest("section").classList.toggle("hidden", !no); }
   $("empty").classList.toggle("hidden", vis.length > 0);
   const filtri = stato.q || stato.modo !== "all" || stato.genere || stato.gioc;
   $("count").innerHTML = filtri
@@ -309,7 +315,7 @@ $("q").addEventListener("input", e => { clearTimeout(attesa); attesa = setTimeou
 document.addEventListener("keydown", e => {   // «/» porta alla ricerca
   if (e.key === "/" && document.activeElement.tagName !== "INPUT") { e.preventDefault(); $("q").focus(); }
 });
-try { Object.assign(stato, JSON.parse(localStorage.getItem("ludoteca-stato") || "{}"), {q: ""}); } catch (e) {}
+try { Object.assign(stato, JSON.parse(localStorage.getItem(SOLO_CONV ? "ludoteca-stato-conv" : "ludoteca-stato") || "{}"), {q: ""}); } catch (e) {}
 
 // vista a copertine, a muro o a elenco (ricordata nel browser)
 const vbtn = document.querySelectorAll(".view button");
@@ -329,12 +335,13 @@ fetch("stato.json", {cache: "no-cache"}).then(r => r.json()).then(st => {
 const MESI = ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"];
 const data = d => { const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(d || ""); return m ? `${+m[3]} ${MESI[+m[2] - 1]}` : ""; };
 fetch("giochi.json", {cache: "no-cache"}).then(r => r.json()).then(all => {
+  if (SOLO_CONV) all = all.filter(g => g.sezione !== "originale");
   tutti = all;
   all.forEach(g => schede.set(g.repo, card(g)));
   $("stats").innerHTML =
     `<div class="stat"><b>${all.length}</b><span>giochi</span></div>` +
     `<div class="stat"><b>${all.filter(g=>g.online).length}</b><span>online</span></div>` +
-    `<div class="stat"><b>${all.filter(g=>g.sezione==="originale").length}</b><span>originali</span></div>`;
+    (SOLO_CONV ? "" : `<div class="stat"><b>${all.filter(g=>g.sezione==="originale").length}</b><span>originali</span></div>`);
   // generi presenti, in ordine di frequenza, nel menu a tendina
   const conta = {};
   all.forEach(g => (g.generi || []).forEach(x => conta[x] = (conta[x] || 0) + 1));
