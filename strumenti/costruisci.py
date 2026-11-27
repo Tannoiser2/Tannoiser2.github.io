@@ -221,13 +221,14 @@ def main(out):
         json.dump({"costruita": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()),
                    "bgg_giochi": len(info), "bgg_token": bool(BGG_TOKEN), "bgg_problema": STATO_BGG["msg"]},
                   f, ensure_ascii=False, indent=1)
-    # la stessa ludoteca con le sole conversioni, all'indirizzo .../conversioni/
+    # la ludoteca condivisa (i giochi scelti con la spunta) a .../condivisa/; .../conversioni/ è il vecchio indirizzo
     pagina = open(os.path.join(out, "index.html"), encoding="utf-8").read()
-    pagina = pagina.replace('<html lang="it">', '<html lang="it" data-solo="conversioni">', 1)
+    pagina = pagina.replace('<html lang="it">', '<html lang="it" data-solo="condivisa">', 1)
     pagina = pagina.replace("<head>", '<head>\n<base href="../">', 1)
-    os.makedirs(os.path.join(out, "conversioni"), exist_ok=True)
-    with open(os.path.join(out, "conversioni", "index.html"), "w", encoding="utf-8") as f:
-        f.write(pagina)
+    for cartella in ("condivisa", "conversioni"):
+        os.makedirs(os.path.join(out, cartella), exist_ok=True)
+        with open(os.path.join(out, cartella, "index.html"), "w", encoding="utf-8") as f:
+            f.write(pagina)
     print(f"{len(giochi)} giochi")
 
 

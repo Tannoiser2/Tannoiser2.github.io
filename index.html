@@ -136,6 +136,23 @@ body.wall .wall-link:focus-visible{outline:3px solid var(--accent);outline-offse
 body.wall .wall-link .dot{position:absolute;top:6px;left:6px;width:10px;height:10px;border-radius:50%;background:var(--online);box-shadow:0 0 0 2px rgba(255,255,255,.85)}
 body.wall .cover:not(.nat)::after{content:attr(data-t);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:10px;text-align:center;font-family:Fraunces,Georgia,serif;font-weight:600;font-size:15px;color:var(--ink)}
 @media (hover:none){body.wall .wall-link .cap{opacity:1;font-size:11px;padding-top:16px}}
+/* ludoteca condivisa: la spunta per scegliere i giochi (solo per il proprietario, dopo l'accesso) */
+.share{display:none}
+body.owner .share{display:flex;align-items:center;gap:8px;margin:6px 0 0;padding:7px 10px;border:1px solid var(--line);border-radius:10px;font-size:13.5px;font-weight:600;cursor:pointer;user-select:none;background:var(--bg)}
+body.owner .share input{width:18px;height:18px;margin:0;accent-color:var(--online);flex:0 0 auto}
+body.owner .share span{flex:1 1 auto;min-width:0}
+body.owner .share.si{border-color:var(--online);background:var(--online-bg);color:var(--online)}
+body.owner .share.err{border-color:var(--accent)}
+body.owner.list .share{flex:0 0 auto;margin:0}
+body.owner.wall .card .share{display:none}
+body.owner.wall .wall-link .dot{display:none}
+body.owner.wall .card.condiviso .wall-link::before{content:"";position:absolute;top:6px;right:6px;width:12px;height:12px;border-radius:50%;background:var(--online);box-shadow:0 0 0 2px rgba(255,255,255,.9)}
+.ownerbar{display:none}
+body.owner #pgestisci{display:none}
+body.owner .ownerbar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:16px 0 0;padding:10px 14px;border:1px solid var(--online);background:var(--online-bg);color:var(--online);border-radius:12px;font-size:14px}
+.ownerbar a,.ownerbar button{font:inherit;font-size:14px;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
+.ownerbar .msg{flex:1 1 220px;min-width:0}
+.gestisci{font:inherit;font-size:13px;background:none;border:0;padding:0;color:inherit;cursor:pointer;text-decoration:underline}
 footer{margin:56px 0 0;padding:24px 0 40px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
 footer p{margin:0 0 6px;max-width:760px}
 </style>
@@ -185,6 +202,7 @@ footer p{margin:0 0 6px;max-width:760px}
     <h2 id="nov-t">Aggiunti di recente</h2>
     <div class="strip" id="strip"></div>
   </section>
+  <div class="ownerbar" id="ownerbar"><span class="msg" id="ownermsg"></span><a href="condivisa/" target="_blank" rel="noopener">Apri la ludoteca condivisa</a><button type="button" id="esci">Esci</button></div>
   <p class="empty hidden" id="empty">Nessun gioco con questi filtri.</p>
 
   <section class="sez">
@@ -205,6 +223,7 @@ footer p{margin:0 0 6px;max-width:760px}
     <p>Adattamenti digitali non ufficiali, realizzati per uso personale. Giochi, regole, illustrazioni e marchi appartengono ai rispettivi autori ed editori.</p>
     <p>Il codice di ogni gioco è su <a href="https://github.com/Tannoiser2">GitHub</a>. Schede dei giochi da <a href="https://boardgamegeek.com">BoardGameGeek</a>.</p>
     <p class="bggnote" id="bggnote"></p>
+    <p id="pgestisci"><button type="button" class="gestisci" id="gestisci">Scegli i giochi della ludoteca condivisa</button></p>
   </div>
 </footer>
 
@@ -246,6 +265,7 @@ function card(g){
       ${facts(g.bgg)}
       <p class="desc">${esc(g.descrizione)}</p>
       </div>
+      <label class="share"><input type="checkbox" data-repo="${esc(g.repo)}"><span>Nella ludoteca condivisa</span></label>
       <div class="actions">
         <a class="btn play" href="${esc(g.gioca)}" aria-label="Gioca a ${esc(g.titolo)}">Gioca</a>
         ${g.bgg ? `<a class="btn bgg" href="${esc(g.bgg.url)}" target="_blank" rel="noopener" aria-label="${esc(g.titolo)} su BoardGameGeek">BGG</a>` : ""}
@@ -254,11 +274,23 @@ function card(g){
     </div>`;
   return el;
 }
-// .../conversioni/ (o ?conversioni): la ludoteca senza i giochi originali
-const SOLO_CONV = document.documentElement.dataset.solo === "conversioni" || new URLSearchParams(location.search).has("conversioni");
+// La ludoteca condivisa (.../condivisa/, anche .../conversioni/ o ?condivisa) mostra solo i giochi scelti
+// dal proprietario con la spunta «Nella ludoteca condivisa». Le scelte stanno nel database Firebase,
+// in ludoteca/condivisi/<repository> = true/false; un gioco mai toccato è condiviso se è una conversione.
+const DB = "https://flammerouge-f8669-default-rtdb.europe-west1.firebasedatabase.app";
+const FB = {apiKey: "AIzaSyCf1NQodB-J3OrdU_gHYQ1I6VJtXBk1ciU", authDomain: "flammerouge-f8669.firebaseapp.com",
+            databaseURL: DB, projectId: "flammerouge-f8669"};
+const qs = new URLSearchParams(location.search);
+const SOLO_CONV = !!document.documentElement.dataset.solo || qs.has("condivisa") || qs.has("conversioni");
+const chiave = r => String(r).replace(/[.#$\[\]\/]/g, "_");
+let scelte = {};
+const condiviso = g => { const v = scelte[chiave(g.repo)]; return typeof v === "boolean" ? v : g.sezione !== "originale"; };
+const leggiScelte = () => fetch(DB + "/ludoteca/condivisi.json", {cache: "no-cache"})
+  .then(r => r.ok ? r.json() : null).then(d => { scelte = d && typeof d === "object" ? d : {}; }).catch(() => {});
 if (SOLO_CONV) {
-  document.title = "La ludoteca digitale · conversioni";
-  document.getElementById("orig").closest("section").remove();
+  document.title = "La ludoteca digitale · condivisa";
+  document.getElementById("pgestisci").remove();
+  document.getElementById("ownerbar").remove();
 }
 const conv = document.getElementById("conv"), orig = document.getElementById("orig");
 const $ = id => document.getElementById(id);
@@ -334,8 +366,8 @@ fetch("stato.json", {cache: "no-cache"}).then(r => r.json()).then(st => {
 
 const MESI = ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"];
 const data = d => { const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(d || ""); return m ? `${+m[3]} ${MESI[+m[2] - 1]}` : ""; };
-fetch("giochi.json", {cache: "no-cache"}).then(r => r.json()).then(all => {
-  if (SOLO_CONV) all = all.filter(g => g.sezione !== "originale");
+Promise.all([fetch("giochi.json", {cache: "no-cache"}).then(r => r.json()), leggiScelte()]).then(([all]) => {
+  if (SOLO_CONV) all = all.filter(condiviso);
   tutti = all;
   all.forEach(g => schede.set(g.repo, card(g)));
   $("stats").innerHTML =
@@ -352,9 +384,69 @@ fetch("giochi.json", {cache: "no-cache"}).then(r => r.json()).then(all => {
   const nuovi = all.filter(g => g.aggiunto).sort(ORD.recenti).slice(0, 8);
   $("strip").innerHTML = nuovi.map(g => `<a href="${esc(g.gioca)}" title="Gioca a ${esc(g.titolo)}"><div class="ph">${g.img ? `<img src="${esc(g.img)}" alt="" loading="lazy">` : ""}</div><div class="t">${esc(g.titolo)}</div><div class="d">${data(g.aggiunto)}</div></a>`).join("");
   mostra();
+  aggiornaSpunte();
 }).catch(() => {
   conv.innerHTML = '<p class="sub">Non riesco a caricare l\'elenco dei giochi. Riprova fra poco.</p>';
 });
+
+// ---- scelta dei giochi condivisi: solo il proprietario, dopo l'accesso con Google ----
+let utente = null, fbAuth = null;
+function aggiornaSpunte(){
+  document.querySelectorAll(".share input").forEach(i => {
+    const g = tutti.find(x => x.repo === i.dataset.repo);
+    if (!g) return;
+    const si = condiviso(g);
+    i.checked = si;
+    i.closest(".share").classList.toggle("si", si);
+    i.closest(".card").classList.toggle("condiviso", si);
+  });
+  const n = tutti.filter(condiviso).length;
+  const m = document.getElementById("ownermsg");
+  if (m) m.textContent = `Scegli con la spunta quali giochi compaiono nella ludoteca condivisa: ora sono ${n} su ${tutti.length}.`;
+}
+document.addEventListener("change", async e => {
+  const i = e.target;
+  if (!i.matches || !i.matches(".share input") || !utente) return;
+  const lab = i.closest(".share"), k = chiave(i.dataset.repo), val = i.checked;
+  lab.classList.remove("err");
+  try {
+    const tok = await utente.getIdToken();
+    const r = await fetch(`${DB}/ludoteca/condivisi/${encodeURIComponent(k)}.json?auth=${tok}`, {method: "PUT", body: JSON.stringify(val)});
+    if (!r.ok) throw new Error(r.status);
+    scelte[k] = val;
+  } catch (err) {
+    i.checked = !val; lab.classList.add("err");
+    const m = document.getElementById("ownermsg");
+    if (m) m.textContent = "Non riesco a salvare la scelta: questo account non può modificare la ludoteca condivisa.";
+    return;
+  }
+  aggiornaSpunte();
+});
+function caricaFirebase(){
+  if (fbAuth) return Promise.resolve(fbAuth);
+  const v = "10.12.2", js = n => new Promise((ok, ko) => { const t = document.createElement("script");
+    t.src = `https://www.gstatic.com/firebasejs/${v}/${n}.js`; t.onload = ok; t.onerror = ko; document.head.appendChild(t); });
+  return js("firebase-app-compat").then(() => js("firebase-auth-compat")).then(() => {
+    const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FB);
+    fbAuth = app.auth();
+    fbAuth.onAuthStateChanged(u => {
+      utente = u && !u.isAnonymous ? u : null;
+      document.body.classList.toggle("owner", !!utente);
+      try { utente ? localStorage.setItem("ludoteca-proprietario", "1") : localStorage.removeItem("ludoteca-proprietario"); } catch (e) {}
+      if (utente) { leggiScelte().then(aggiornaSpunte); window.scrollTo({top: 0, behavior: "smooth"}); }
+    });
+    return fbAuth;
+  });
+}
+if (!SOLO_CONV) {
+  document.getElementById("gestisci").addEventListener("click", () => caricaFirebase()
+    .then(a => a.signInWithPopup(new firebase.auth.GoogleAuthProvider()))
+    .catch(err => alertino("Accesso non riuscito: " + (err && err.code || err))));
+  document.getElementById("esci").addEventListener("click", () => fbAuth && fbAuth.signOut());
+  let ricordato = false; try { ricordato = localStorage.getItem("ludoteca-proprietario") === "1"; } catch (e) {}
+  if (ricordato) caricaFirebase().catch(() => {});
+}
+function alertino(t){ const p = document.getElementById("pgestisci"); if (p) p.insertAdjacentHTML("beforeend", `<span> · ${esc(t)}</span>`); }
 </script>
 </body>
 </html>

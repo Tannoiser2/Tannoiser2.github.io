@@ -4,6 +4,21 @@
     ".write": false,
 
     // ============================================================================
+    // LUDOTECA CONDIVISA: quali giochi compaiono in .../condivisa/
+    // radice: ludoteca/condivisi/<repository> = true / false
+    // la legge chiunque (la pagina è pubblica), la cambia solo il proprietario entrato con Google
+    // ============================================================================
+    "ludoteca": {
+      "condivisi": {
+        ".read": true,
+        ".write": "auth != null && auth.token.email === 'tannoiser2@gmail.com' && auth.token.email_verified === true",
+        "$repo": {
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    },
+
+    // ============================================================================
     // FLAMME ROUGE (ULTIMO CHILOMETRO) E BLOOD MASTER  (radice storica "rooms")
     // radice: rooms
     // ============================================================================
